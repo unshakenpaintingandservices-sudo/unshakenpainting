@@ -1,5 +1,6 @@
 import {
   deliverInquiry,
+  inquiryFailureMessage,
   validateInquiry,
   type InquiryFields,
   type InquiryErrors,
@@ -15,6 +16,8 @@ if (form) {
   const preferred = form.querySelector<HTMLSelectElement>('#preferredContact')!;
   const email = form.querySelector<HTMLInputElement>('#email')!;
   const phone = form.querySelector<HTMLInputElement>('#phone')!;
+  const clear = form.querySelector<HTMLButtonElement>('button[type="reset"]')!;
+  const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
   const idleLabel = submit.textContent!;
   let pending = false;
   const showErrors = (errors: InquiryErrors) => {
@@ -94,6 +97,9 @@ if (form) {
       ].map((key) => [key, String(data.get(key) || '').trim()]),
     ) as unknown as InquiryFields;
     const errors = validateInquiry(fields, [...(photos.files || [])]);
+    if (live && photos.files?.length)
+      errors.photos =
+        'Photos cannot be sent with this form yet. Remove the selected photos and submit again, or call Grant to arrange sharing them.';
     showErrors(errors);
     if (Object.keys(errors).length) {
       summary.focus();
@@ -101,33 +107,51 @@ if (form) {
     }
     for (const [key, value] of Object.entries(fields)) data.set(key, value);
     data.delete('photos');
-    for (const photo of photos.files || []) data.append('photos', photo);
     data.set('source', 'website-estimate');
     data.set('timestamp', new Date().toISOString());
     data.set('status', 'new');
+    const controls = [
+      ...form.querySelectorAll<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >('input, select, textarea'),
+    ].map((control) => ({ control, disabled: control.disabled }));
+    for (const { control } of controls) control.disabled = true;
     pending = true;
     submit.disabled = true;
-    submit.textContent = 'Checking your request…';
+    clear.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    submit.textContent = live
+      ? 'Sending your request…'
+      : 'Checking your request…';
+    result.setAttribute('role', 'status');
+    result.textContent = submit.textContent;
+    result.classList.remove('is-error');
+    result.hidden = false;
+    let accepted = false;
     try {
       const outcome = await deliverInquiry(data, {
-        mode:
-          import.meta.env.PUBLIC_INQUIRY_MODE === 'live' ? 'live' : 'preview',
-        launchReady: import.meta.env.PUBLIC_SITE_LAUNCH_READY === 'true',
-        endpoint: import.meta.env.PUBLIC_INQUIRY_ENDPOINT || '',
+        mode: live ? 'live' : 'preview',
+        endpoint: import.meta.env.PUBLIC_INQUIRY_ENDPOINT || '/api/contact/',
         origin: window.location.origin,
       });
+      accepted = outcome.status === 'accepted';
       result.textContent =
         outcome.status === 'preview'
           ? 'Your request passes the form checks. This is a local preview: no request or photos were sent to Grant, and nothing was saved. You can keep editing or clear the form.'
-          : 'Your request was received. Thank you for telling Grant about your project.';
+          : 'Your request was accepted for email delivery to Grant. Thank you for telling Grant about your project.';
       result.classList.remove('is-error');
-    } catch {
-      result.textContent =
-        'We couldn’t confirm that your request was received. Your details are still here. Please call Grant, or try again later.';
+    } catch (error) {
+      result.setAttribute('role', 'alert');
+      result.textContent = inquiryFailureMessage(error);
       result.classList.add('is-error');
     } finally {
       pending = false;
+      for (const { control, disabled } of controls) control.disabled = disabled;
+      // The reset guard permits this only after acceptance; then restore the result.
+      if (accepted) form.reset();
+      form.removeAttribute('aria-busy');
       submit.disabled = false;
+      clear.disabled = false;
       submit.textContent = idleLabel;
       result.hidden = false;
       result.focus();

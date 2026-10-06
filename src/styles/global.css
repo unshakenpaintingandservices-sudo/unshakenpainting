@@ -366,6 +366,9 @@ main:focus {
 .mobile-contact {
   display: none;
 }
+.mobile-menu:not([open]) nav {
+  display: none;
+}
 
 /* Quiet, noninteractive vector marks. Two painted edges across the site. */
 .foundation-line::before,
@@ -673,6 +676,7 @@ main:focus {
 }
 .services-heading h1 {
   grid-column: 2;
+  overflow-wrap: anywhere;
 }
 .services-heading > .container > p:last-child {
   grid-column: 2;

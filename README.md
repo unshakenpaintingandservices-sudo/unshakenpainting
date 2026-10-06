@@ -2,9 +2,9 @@
 
 Developer onboarding and maintenance guide for the Unshaken Painting and Services website. It presents services, Grant Dorney’s story, authentic project comparisons, and contact options.
 
-The site uses **Astro 7, TypeScript, plain CSS, and small browser scripts**, with npm and `package-lock.json` for reproducible dependency installation. Astro produces static HTML and optimized images in `dist/`; there is no SSR adapter, operational inquiry backend, serverless function, database, or email integration in this repository.
+The site uses **Astro 7, TypeScript, plain CSS, and small browser scripts**, with npm and `package-lock.json` for reproducible dependency installation. Ordinary pages remain static. The Vercel adapter builds those pages and optimized assets under `.vercel/output/static/`, with an on-demand `/api/contact/` function that sends inquiries through Resend. There is no database, customer autoresponder, or file-upload integration.
 
-Current features include five public pages, responsive navigation, keyboard-accessible before/after sliders, the supplied biography and faith explanation, and client-side inquiry validation. **The default form is a preview: it sends and saves nothing.** The default build discourages indexing. Missing owner photography, unconfirmed content, and external launch requirements mean a successful build alone does not establish production readiness.
+Current features include five public pages, responsive navigation, keyboard-accessible before/after sliders, the supplied biography and faith explanation, and client/server inquiry validation. **The default form is a preview: it sends and saves nothing.** The default build discourages indexing. Missing owner photography, unconfirmed content, and external launch requirements mean a successful build alone does not establish production readiness.
 
 ## Quick start
 
@@ -17,18 +17,18 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Astro, normally `http://127.0.0.1:4321`. Both development and preview scripts bind to `127.0.0.1`.
+Open the local URL printed by Astro, normally `http://127.0.0.1:4321`. The development server binds to `127.0.0.1` and runs both pages and the contact endpoint. `npm run preview` is retained in the scripts but is unsupported by the installed Vercel adapter; use the development server for local interaction and the build/verifier for deployment-artifact checks.
 
 ### Runtime requirements
 
 - The root [package.json](package.json) has no `engines` or `packageManager` pin, and there is no runtime-version file.
 - The [lockfile](package-lock.json) resolves Astro to `7.3.2`, declaring Node `>=22.12.0` and npm `>=9.6.5`.
 - The lint/parser dependencies are stricter: `eslint-plugin-astro` and `astro-eslint-parser` declare Node `^22.22.3 || ^24.16.0 || >=26.3.0`. Use a version that satisfies the development tools, not just Astro.
-- Local checks have run successfully with **Node 26.10.0 and npm 11.19.1**. The other declared versions and operating systems have not all been tested.
+- Local checks have run with **Node 26.10.0 and npm 11.19.1**. The Vercel adapter does not support Node 26 as a function runtime and emits a warning before targeting **Node 24**. Select Node **24.x** in Vercel; local Node 24 should be at least **24.16.0** to satisfy the lint tools. No runtime pin or local Node installation has been changed. Deployment-runtime behavior still needs verification on Vercel.
 
 `npm ci` installs the locked dependency graph and replaces an existing `node_modules/`. Do not substitute an unreviewed dependency update for installation troubleshooting.
 
-No local environment file, external account, or credentials are required for the default preview. Pages, bundled fonts, project images, comparisons, and form validation work locally. [.env.example](.env.example) documents the optional public settings; if adding a local `.env`, retain its preview values. Do not overwrite an existing environment file without reviewing it privately.
+No local environment file, external account, or credentials are required for the default preview. Pages, bundled fonts, project images, comparisons, and form validation work locally. [.env.example](.env.example) documents safe public defaults and empty server configuration. Keep delivery disabled until the sender and recipient have been confirmed; follow the environment instructions below when configuring an ignored `.env.local`. Preserve any existing local values.
 
 Astro’s CLI supports background servers. If a command returns while a server remains running, inspect or stop the appropriate process:
 
@@ -36,28 +36,25 @@ Astro’s CLI supports background servers. If a command returns while a server r
 npm exec --no -- astro dev status
 npm exec --no -- astro dev logs
 npm exec --no -- astro dev stop
-npm exec --no -- astro preview status
-npm exec --no -- astro preview logs
-npm exec --no -- astro preview stop
 ```
 
-For a different development port, use `npm run dev -- --port 4322`. Development and preview are separate servers; use the URL each command reports.
+For a different development port, use `npm run dev -- --port 4322`. Use the URL Astro reports and stop only the server you intend to replace.
 
 ## Command reference
 
-All commands below use installed local dependencies. None deploys the site or sends real inquiries.
+All commands below use installed local dependencies. None deploys the site. Tests use mocks and never send email; submitting the development form can send real email only after both delivery switches and valid server configuration are enabled.
 
-| Command                | Purpose and effects                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`          | Runs Astro development server with source updates; may write generated metadata/cache.                                            |
-| `npm run build`        | Generates static pages and responsive assets in `dist/`; also refreshes generated metadata/cache. Does not deploy.                |
-| `npm run preview`      | Serves the existing `dist/` locally. Run a fresh build first; it does not rebuild source edits.                                   |
-| `npm run typecheck`    | Runs `astro check` for Astro/TypeScript diagnostics; may refresh `.astro/` types. Does not fix source files.                      |
-| `npm run lint`         | Runs ESLint over applicable files, without automatic fixes.                                                                       |
-| `npm test`             | Runs `tests/*.test.ts` with Node’s test runner and `--experimental-strip-types`; transport responses are stubbed.                 |
-| `npm run format:check` | Checks formatting without rewriting source.                                                                                       |
-| `npm run format`       | **Rewrites** applicable files using Prettier. Review the working changes afterward.                                               |
-| `npm run verify:build` | Reads and validates an existing `dist/`. Requires a fresh build with preview indexing settings; see the validation caveats below. |
+| Command                | Purpose and effects                                                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run dev`          | Runs Astro development server with source updates; may write generated metadata/cache.                                         |
+| `npm run build`        | Builds `.vercel/output/`: static pages/assets, routing configuration, and server function. Does not deploy or send email.      |
+| `npm run preview`      | Unsupported by the installed Vercel adapter. Use `npm run dev` for local pages/API and build verification for artifacts.       |
+| `npm run typecheck`    | Runs `astro check` for Astro/TypeScript diagnostics; may refresh `.astro/` types. Does not fix source files.                   |
+| `npm run lint`         | Runs ESLint over applicable files, without automatic fixes.                                                                    |
+| `npm test`             | Runs `tests/*.test.ts` with Node’s test runner and `--experimental-strip-types`; transport responses are stubbed.              |
+| `npm run format:check` | Checks formatting without rewriting source.                                                                                    |
+| `npm run format`       | **Rewrites** applicable files using Prettier. Review the working changes afterward.                                            |
+| `npm run verify:build` | Checks `.vercel/output/static/` and function configuration after a fresh build; keep preview indexing settings for this check. |
 
 [ESLint configuration](eslint.config.mjs) uses recommended JavaScript, TypeScript, and Astro rules. [Prettier configuration](.prettierrc.json) uses the Astro plugin and single quotes. [TypeScript configuration](tsconfig.json) extends Astro’s strict preset. Dependencies, generated output, and local review artifacts are excluded by the relevant tool configurations.
 
@@ -65,28 +62,29 @@ All commands below use installed local dependencies. None deploys the site or se
 
 ```text
 .
-├── astro.config.mjs         # Static output, site URL, trailing slashes
+├── astro.config.mjs         # Static pages, Vercel adapter, site URL, slashes
 ├── package.json            # Dependencies and npm scripts
 ├── package-lock.json       # Resolved dependency versions
-├── .env.example            # Safe public preview configuration
+├── .env.example            # Preview defaults and blank server configuration
 ├── src/
-│   ├── pages/              # File-based routes and generated robots/sitemap
+│   ├── pages/              # Static pages, robots/sitemap, api/contact.ts
 │   ├── layouts/Layout.astro # Shared shell, metadata, fonts, header/footer
 │   ├── components/         # Reusable UI, inquiry form, photo comparison
 │   ├── data/               # Business facts, services, projects, approval rules
 │   ├── styles/global.css   # Design tokens, layout, responsive/accessibility CSS
 │   ├── scripts/contact.ts  # Browser form events and submission feedback
-│   ├── lib/inquiry.ts      # Validation and guarded delivery boundary
+│   ├── lib/inquiry.ts      # Browser validation and guarded delivery
+│   ├── lib/contact-server.ts # Bounded parsing, validation, email composition
 │   └── assets/
 │       ├── brand/          # Existing raster logo
 │       └── projects/       # Authentic originals and photo maintenance notes
 ├── public/                 # Currently empty; files here would be copied directly
 ├── tests/                  # Node unit tests
-├── scripts/verify-build.mjs # Static-output assertions
-└── docs/                   # Future inquiry contract and historical reports
+├── scripts/verify-build.mjs # Static-output and function assertions
+└── docs/                   # Inquiry contract and historical reports
 ```
 
-`node_modules/`, `.astro/`, `dist/`, and `artifacts/` are local dependency/generated/review directories, ignored by [.gitignore](.gitignore). Optional screenshots under `artifacts/` may not be available in another checkout.
+`node_modules/`, `.astro/`, `dist/`, `.vercel/`, and `artifacts/` are local dependency/generated/review directories, ignored by [.gitignore](.gitignore). Optional screenshots under `artifacts/` may not be available in another checkout.
 
 | Route                         | Entry point and composition                                                                                                                                                 |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,6 +93,7 @@ All commands below use installed local dependencies. None deploys the site or se
 | `/work/`                      | [work.astro](src/pages/work.astro): full `RecentWork` and approved reviews when available.                                                                                  |
 | `/about/`                     | [about.astro](src/pages/about.astro): owner introduction, full biography/signature, name explanation, and `Expectations`.                                                   |
 | `/contact/`                   | [contact.astro](src/pages/contact.astro): phone fallback, service-area context, and `InquiryForm`.                                                                          |
+| `/api/contact/`               | [contact.ts](src/pages/api/contact.ts): on-demand POST endpoint, server-only environment lookup, and Resend SDK call. Other methods return 405.                             |
 | Unmatched URL                 | [404.astro](src/pages/404.astro): custom error page, built as `404.html`; host routing must serve it appropriately.                                                         |
 | `/robots.txt`, `/sitemap.xml` | [robots.txt.ts](src/pages/robots.txt.ts) and [sitemap.xml.ts](src/pages/sitemap.xml.ts): `GET` handlers executed for static output, not a request-time application backend. |
 
@@ -156,49 +155,69 @@ The range input changes only the before image’s `clip-path`; it must not resiz
 
 Page files pass their own `title` and `description` into `Layout`. Maintain these alongside visible content. `business.url` feeds `astro.config.mjs`, canonical/Open Graph URLs, JSON-LD identifiers, sitemap URLs, and the robots sitemap location. Editing it is a content/configuration change, not a DNS or hosting change.
 
-The exact value `PUBLIC_SITE_LAUNCH_READY=true` changes HTML robots metadata to `index, follow` and `robots.txt` to `Allow: /`. Otherwise they emit `noindex, nofollow` and `Disallow: /`. The sitemap always contains `navigation` entries, even in preview. These controls discourage indexing; they are not authentication or access protection.
+The exact value `PUBLIC_SITE_LAUNCH_READY=true` changes public-page robots metadata to `index, follow` and `robots.txt` to `Allow: /`. The error page remains `noindex, nofollow`. Otherwise all pages emit `noindex, nofollow` and robots emits `Disallow: /`. The sitemap always contains `navigation` entries, even in preview. These controls discourage indexing; they are not authentication or access protection.
+
+The native Vercel redirects in [vercel.json](vercel.json) preserve nine customer-facing paths observed in the old domain's sitemap, including `/Quote` → `/contact/`, `/Gallery` → `/work/`, and old service pages → the relevant Services anchors. Each exact legacy name matches with or without its trailing slash. These use Vercel project configuration because the installed Astro adapter strips the source slash from Astro-configured redirects, making them miss after slash normalization. The build verifier simulates Vercel's merge of project rules and generated adapter routing, checks both slash forms and destination anchors, and ensures current pages/API and unrelated paths are not captured. Verify actual deployed HTTP responses before cutover. Old administrative paths are not published. Verify any additional printed or externally linked URL before cutover; no QR asset or new QR destination is introduced.
 
 ## Contact form and email
 
-There is **no operational submission endpoint or mail provider** in this repository. The implemented flow is:
+The integration is implemented with Resend **6.32.1** and `@astrojs/vercel` **11.0.12**. Its default configuration remains non-sending; successful mocked tests do not establish a verified sending domain, a working recipient inbox, or production delivery.
 
 ```text
 contact.astro → InquiryForm.astro → scripts/contact.ts
                                   → validateInquiry()
                                   → deliverInquiry() / resolveEndpoint()
-                                    preview: return before network transport
-                                    live: POST to a future same-origin /api/ path
+                                    preview: no network request
+                                    live: POST /api/contact/
+                                          → runtime server configuration
+                                          → bounded parsing and validation
+                                          → await Resend send
+                                          → accept only with a provider ID
 ```
 
-[InquiryForm.astro](src/components/InquiryForm.astro) starts with submit disabled. The browser script attaches its submit guard before enabling it, prevents native posting, trims fields, and focuses linked validation errors. The HTML `action="/contact/"` is not an implemented POST handler. Without JavaScript, the form stays disabled and tells the visitor to call Grant.
+[InquiryForm.astro](src/components/InquiryForm.astro) starts with submit disabled. The browser attaches its guard before enabling it, trims fields, and focuses linked validation errors. Without JavaScript, the form stays disabled and tells the visitor to call Grant. During submission, inputs and submit/reset controls are disabled, and accessible status feedback is shown. Failures preserve the visitor’s details and offer the existing phone alternative. Only accepted live submissions reset the form; preview validation keeps the input.
 
-[validateInquiry()](src/lib/inquiry.ts) requires a name, city, project type, description, and the preferred reply method’s contact detail. A supplied optional email/phone must also be valid. Name/city are limited to 100 characters and description to 3,000. Project type is `residential`, `commercial`, or `not-sure`. Optional photos are limited to five JPEG/PNG/WebP files, nonempty and at most **8 MiB each / 20 MiB total**. Client checks use declared MIME and size; they do not inspect image contents. Keep form labels and `photoLimits` consistent when changing limits.
+[validateInquiry()](src/lib/inquiry.ts) requires name, city, project type, description, and the preferred reply method’s contact detail. A supplied optional email/phone must also be valid. Name/city are limited to 100 characters and description to 3,000; project type is `residential`, `commercial`, or `not-sure`. The server independently checks field types, lengths, duplicates, email syntax, and control characters. Routing fields such as sender, recipient, and subject cannot be supplied by the visitor.
 
-On valid input, the script creates multipart `FormData` with the fields, repeated `photos`, and browser-generated `source`, `timestamp`, and `status`. A pending guard prevents duplicate submissions/reset while awaiting a result. Preview returns before calling `fetch`; no application browser-storage persistence is implemented.
+**Photo sending is unavailable.** The existing optional photo field and preview checks remain: up to five nonempty JPEG/PNG/WebP files, 8 MiB each and 20 MiB combined. Live mode explains the limitation and asks visitors to remove selected files before submitting. The client never uploads files, and the endpoint rejects attempted uploads. No attachments, file storage, or customer autoresponder were added.
 
-Live delivery requires all three settings below plus an HTTPS page origin. `resolveEndpoint()` accepts only a same-origin path under `/api/` using letters, digits, slashes, underscores, or hyphens. Absolute URLs, query tokens, and dot segments are rejected. `deliverInquiry()` uses POST, omits credentials, disables caching, rejects redirects, and times out after 15 seconds. Success requires an HTTP-success response and JSON with `accepted: true`. The UI says “received,” which does not prove email delivery. Errors retain entered details and offer calling Grant or retrying; Clear form resets the local fields/messages.
+The canonical endpoint is `/api/contact/`: keep its trailing slash because this site uses `trailingSlash: 'always'` and the browser rejects redirects. Live delivery uses a same-origin `/api/` path and HTTPS, with HTTP allowed only for exact loopback hosts `localhost`, `127.0.0.1`, and `[::1]`. Requests omit credentials, reject redirects, disable caching, and time out in the browser after 20 seconds. An HTTP-success response with JSON `accepted: true` is required. A timeout or lost response cannot establish whether Resend accepted an email; check provider records before repeating a manual test.
 
-**No honeypot, CAPTCHA, rate limiting, server validation, or spam defense is implemented.** The HTTPS/path guard is not a substitute. The [future inquiry contract](docs/INQUIRY-ENDPOINT.md) specifies server validation, upload-content checks, abuse/body limits, authoritative metadata, privacy/retention rules, server-selected recipients, and durable acceptance before acknowledgment. Those are requirements for future work.
+The [server handler](src/lib/contact-server.ts) accepts multipart form data and URL-encoded text, limits the body to **64 KiB while reading with a five-second total deadline**, cancels aborted requests, rejects malformed input and a filled/missing honeypot, and checks request origin/fetch metadata. Astro’s default origin protection stays enabled. HTML email values are escaped, a plain-text version includes the project details, and browser-provided workflow metadata has no authority. The handler awaits Resend, rejects returned errors and thrown failures, and acknowledges only a nonempty message ID. The [contact SDK transport](src/lib/contact-resend.ts) fixes the official Resend API address, rejects redirects, applies a 10-second provider timeout, and makes no automatic retries. It overrides the SDK’s public transport hook to prevent raw provider-error logging in local development as well as production. Safe JSON failures and diagnostic codes omit customer text, addresses, provider details, and secrets. See the [endpoint contract](docs/INQUIRY-ENDPOINT.md) for statuses and edge cases.
+
+There is **no distributed rate limiter or CAPTCHA** in this repository, and no existing production limiter was available to reuse. Honeypot, origin, and body checks do not stop direct automated requests. Confirm suitable host-level abuse/rate controls for `/api/contact/` before public activation. No paid service, database, or misleading in-memory rate-limit guarantee has been added.
 
 ### Resend and Grant’s mailbox
 
-Resend has no SDK dependency, API call, backend configuration, or supported secret variable here. Its key name appears only in the build verifier’s forbidden-secret patterns. If Resend is selected later, website-generated mail must be implemented behind the future server endpoint with server-only credentials and verified sender/recipient configuration.
+`CONTACT_FROM_EMAIL` is a bare address on a sending domain verified in Grant’s Resend account. The server adds the fixed display name `Unshaken Painting`. `CONTACT_TO_EMAIL` is Grant’s separately confirmed, working inbox. These are independent settings: neither a likely business address nor the website domain proves an inbox exists. The server rejects `resend.dev` senders and provides no fallback sender or recipient.
 
-Grant’s everyday business mailbox is a separate external service. Setting `business.email` only displays a contact address; it provisions neither a mailbox nor automated email delivery. Unit tests stub the transport. A successful test or build does not demonstrate that customer inquiries reach Grant; actual authorized delivery and mailbox checks remain external.
+A validated visitor email becomes the SDK’s camelCase `replyTo` property, including when the visitor prefers a phone call but supplies an optional email. A phone-only inquiry omits Reply-To. The visitor’s address is never used as From. Setting `business.email` only displays a contact link; it provisions neither a mailbox nor a form recipient.
+
+Confirm domain status in the Resend dashboard. A sending-only key may not permit domain/account inspection; broader permissions are unnecessary for sending and should not be requested just for this check. Provider acceptance means Resend returned an ID, not that Grant received the email. [Resend’s domain guide](https://resend.com/docs/dashboard/domains/introduction) and [email-status guide](https://resend.com/docs/dashboard/emails/introduction) describe those separate checks.
 
 ## Environment variables
 
-These are the only environment variables consumed by the application. All are **public, build-time values**; Astro uses them in generated HTML/text and browser code. They contain no secrets. The current static output has no request-time server environment.
+Use [.env.example](.env.example) as the names/defaults reference. Public variables are embedded at build time. The API reads server-only settings per request through [`getSecret()` from `astro:env/server`](https://docs.astro.build/en/reference/modules/astro-env/), which uses the development environment locally and the adapter’s environment in deployment.
 
-| Variable                   | Default / safe example | Purpose and requirement                                                                                                    | Exposure / environment                                                     |
-| -------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `PUBLIC_SITE_LAUNCH_READY` | `false`                | Optional locally. Only exact `true` enables indexing and satisfies the second live-delivery guard.                         | Public; build-time in layout, robots output, form, and browser script.     |
-| `PUBLIC_INQUIRY_MODE`      | `preview`              | Optional locally. Only exact `live` enables delivery mode, still subject to launch/endpoint guards.                        | Public; build-time in form and browser script.                             |
-| `PUBLIC_INQUIRY_ENDPOINT`  | Empty                  | Optional in preview; required for live delivery. `/api/inquiries` is a future-contract example, **not an existing route**. | Public; embedded at build time, validated by the browser delivery utility. |
+| Variable                   | Default / placeholder               | Purpose and exposure                                                                     |
+| -------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `PUBLIC_SITE_LAUNCH_READY` | `false`                             | Public/build-time. Only exact `true` enables indexing; independent of email activation.  |
+| `PUBLIC_INQUIRY_MODE`      | `preview`                           | Public/build-time. Only exact `live` makes the browser submit to the API.                |
+| `PUBLIC_INQUIRY_ENDPOINT`  | `/api/contact/`                     | Public/build-time. Existing same-origin endpoint; also the fallback if empty.            |
+| `RESEND_API_KEY`           | Empty                               | Server-only secret. Use a Resend key authorized to send from the configured domain.      |
+| `CONTACT_FROM_EMAIL`       | Empty; format `website@example.com` | Server-only bare sender address, without a display name, on the verified sending domain. |
+| `CONTACT_TO_EMAIL`         | Empty; format `owner@example.net`   | Server-only bare address of Grant’s confirmed working inbox. No default recipient.       |
+| `CONTACT_DELIVERY_ENABLED` | `false`                             | Server-only runtime switch. Exact `true` plus valid key/addresses permits sending.       |
 
-Restart development after changing configuration; rebuild and redeploy static output to change published behavior. A hosting dashboard setting cannot alter an already-built browser bundle. Keep deployment previews at the safe example values. `PUBLIC_SITE_LAUNCH_READY` couples indexing and delivery eligibility, so do not toggle it casually to test a form.
+For local configuration:
 
-Local `.env` files are ignored except [.env.example](.env.example). No server-only variables are consumed today. Never place provider credentials in `PUBLIC_*`, content data, or committed examples; future server secrets belong in the endpoint’s environment, outside this client bundle.
+1. Check that `.env.local` is ignored with `git check-ignore .env.local` and is untracked with `git ls-files -- .env.local` (the second command must print nothing). `.env*` is ignored except `.env.example`. Do this before placing a key in the file.
+2. Create `.env.local` if missing, or edit the existing file privately while preserving unrelated values. Copy only the needed names/defaults from `.env.example`; do not overwrite a populated file. Restrict local permissions with `chmod 600 .env.local`.
+3. Paste the API key directly into `RESEND_API_KEY` in the private local file. Fill sender and recipient only after confirmation. Never put credentials in command arguments, source, examples, screenshots, logs, or `PUBLIC_*` variables.
+4. Keep `PUBLIC_INQUIRY_MODE=preview`, `CONTACT_DELIVERY_ENABLED=false`, and `PUBLIC_SITE_LAUNCH_READY=false` for ordinary development. For an authorized live test, enable the first two delivery settings only after configuration is ready; indexing can stay disabled.
+5. Restart `npm run dev` after environment changes. `.env.local` configures local development; it does not configure Vercel.
+
+The server gate also protects direct API calls when the browser is in preview mode. Changing Vercel environment values requires a new deployment to apply them; existing deployments retain their previous values. Public flags also require rebuilding their HTML/browser bundles. Never copy production credentials indiscriminately into previews or local machines.
 
 ## Testing and validation
 
@@ -211,73 +230,86 @@ npm run typecheck
 npm test
 npm run build
 npm run verify:build
-npm run preview
 ```
 
 Use `npm run format` deliberately when formatting fixes are needed, then review its changes. All tests currently use Node’s built-in runner:
 
-| Coverage                                                                                                                                                                     | Location                                                   |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Eight inquiry tests: required/optional fields, photo constraints, preview’s zero transport calls, both delivery gates, endpoint restrictions, stubbed acknowledgments/errors | [inquiry.test.ts](tests/inquiry.test.ts)                   |
-| Three tests for expectation replacement and FAQ approval                                                                                                                     | [content-approval.test.ts](tests/content-approval.test.ts) |
-| Three tests for permitted attribution, verification/permission, and independent household/project selection                                                                  | [review-policy.test.ts](tests/review-policy.test.ts)       |
+| Coverage                                                                                                                                                                                         | Location                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Browser delivery: required/optional fields, photo constraints, no-network preview, endpoint restrictions, error handling, honeypot, and mocked acknowledgments                                   | [inquiry.test.ts](tests/inquiry.test.ts)                   |
+| Server delivery: malformed input, body limits, origin checks, honeypot, configured routing, Reply-To, escaped email content, missing configuration, provider errors/exceptions, and accepted IDs | [contact-server.test.ts](tests/contact-server.test.ts)     |
+| Resend SDK transport: actual serialization and authentication with mocked fetch, safe diagnostics, provider errors, invalid responses, network/timeout failure, and no retries                   | [contact-resend.test.ts](tests/contact-resend.test.ts)     |
+| Three tests for expectation replacement and FAQ approval                                                                                                                                         | [content-approval.test.ts](tests/content-approval.test.ts) |
+| Three tests for permitted attribution, verification/permission, and independent household/project selection                                                                                      | [review-policy.test.ts](tests/review-policy.test.ts)       |
 
-[verify-build.mjs](scripts/verify-build.mjs) checks six HTML pages and five sitemap routes, unique metadata/IDs, one H1 per page, local links/anchor targets, schema, responsive WebP images, comparison pairs and range markup, blocked preview indexing, forbidden pending/legacy content and credential patterns, and a client-JavaScript budget below 15,000 bytes.
+[verify-build.mjs](scripts/verify-build.mjs) reads the actual Vercel static output and function configuration. Its browser-JavaScript budget excludes server dependencies. It checks six HTML pages and five sitemap routes, unique metadata/IDs, one H1 per page, local links/anchor targets, schema, responsive WebP images, comparison pairs and range markup, blocked preview indexing, forbidden pending/legacy content and credential patterns, and a client-JavaScript budget below 15,000 bytes.
 
-**The verifier encodes the current preview contract.** It hardcodes routes/counts, domain, city, phone, deck image pairs, and several unpublished-content exclusions. An approved change to these requires deliberate test-expectation updates. An indexable launch build will fail its current `noindex`/`Disallow` assertions; reconcile those during launch work instead of treating a failed check as permission to bypass validation. It is not a comprehensive security audit.
+**The verifier defaults to the preview contract.** It hardcodes routes/counts, domain, city, phone, deck image pairs, and several unpublished-content exclusions. An approved change to these requires deliberate test-expectation updates. To check a local launch artifact without changing private configuration or publishing it, run `PUBLIC_SITE_LAUNCH_READY=true PUBLIC_INQUIRY_MODE=live CONTACT_DELIVERY_ENABLED=false npm run build`, then `npm run verify:build -- --mode=launch`. This mode requires indexable public pages and robots, retains the error-page exclusion, and rejects the contact form's preview notice. The build does not send email; the explicit server gate also remains disabled. Rebuild with ordinary preview settings afterward. Neither mode verifies remote environment configuration or inbox delivery, and this is not a comprehensive security audit.
 
 Manual review remains necessary:
 
 - Inspect affected pages around 375px, 768px, and 1440px: image crops, readable text, horizontal overflow, overlapping frames, and the fixed mobile contact bar.
 - Test each comparison at 0%, 50%, and 100%, with arrows/Home/End, visible focus, pointer and touch. Confirm dragging clips a fixed crop.
-- Check navigation, anchors, phone-link destinations, and contact actions. Test preview validation, preferred-contact changes, photo limits, Clear form, and no-JavaScript fallback with synthetic data.
+- Check navigation, anchors, phone-link destinations, and contact actions. Test preview validation, preferred-contact changes, photo limits, Clear form, and no-JavaScript fallback with synthetic data. In a controlled mocked session, verify pending controls, successful reset, retained input on errors, and live-mode photo rejection.
 - Recheck source permissions, exact supplied wording, and alt text. Browser behavior/visual review, accessibility conformance, live backend security, and actual email delivery are not established by the unit tests.
 
-There is no repository CI workflow or automated browser-test suite. Historical screenshots document past reviews, not checks automatically rerun on each change.
+There is no repository CI workflow or automated browser-test suite. Use `npm run dev` for browser review; `npm run preview` fails because the installed Vercel adapter does not support it. Historical screenshots document past reviews, not checks automatically rerun on each change.
+
+Review tracked files, accessible Git history, and public build output for credential patterns before release without printing any matches. Server bundles may contain environment-variable names but must not embed their values. The launch audit applied compatible security updates and a scoped `@vercel/routing-utils` / `path-to-regexp` override, preserving generated routing. One advisory remains in `http-cache-semantics`; its affected shared-cache pattern is not used by this site's current image/cache flow. Review the saved launch-audit evidence and rerun `npm audit` before release; do not treat an advisory count or an unsupported force upgrade as a security verdict.
 
 ## Deployment and operations
 
-The supported build artifact is **`dist/`**, generated by `npm run build`. [astro.config.mjs](astro.config.mjs) sets `output: 'static'` and `trailingSlash: 'always'`. The build machine needs compatible Node/npm and the locked dependencies; serving the resulting website needs only static hosting, not a Node application server. `npm run preview` is a local review tool.
+[astro.config.mjs](astro.config.mjs) keeps `output: 'static'` and `trailingSlash: 'always'`, adds the compatible Vercel adapter, and leaves ordinary pages prerendered. Only [the contact API](src/pages/api/contact.ts) exports `prerender = false`. `npm run build` produces **`.vercel/output/`**, including static pages/assets, generated routing configuration, and a server function. Do not hand-edit generated files or deploy only the static subdirectory; that would omit email handling. A stale `dist/` is not the deployment artifact for this integration. See the [Astro Vercel adapter guide](https://docs.astro.build/en/guides/integrations-guide/vercel/).
 
-A host must serve directory-index URLs such as `/about/`, the optimized `/_astro/` assets, generated robots/sitemap files, and `404.html` for missing pages. This repository includes no host-specific redirect, security-header, infrastructure, or deployment configuration.
+The repository has no confirmed Vercel account/project linkage (`.vercel/project.json`), deployment script, or remote environment configuration. No authenticated Vercel CLI/connector was available during implementation. Resend domain status, Grant’s recipient inbox, domain/DNS/TLS, mailbox provisioning, and production behavior remain external verification steps. Historical documents mention S3/CloudFront; those are not the deployment target of this integration.
 
-| Service / setting         | Repository evidence and external work                                                                                                                                                                                                                                                                                           |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GitHub                    | No repository URL or Actions workflow is supplied in project configuration. Remote access, branches, protections, and deployment integrations must be verified in the actual account.                                                                                                                                           |
-| Vercel                    | No `vercel.json`, Vercel adapter, or deployment script exists. If used as the host, configure the project externally with npm installation, `npm run build`, `dist/`, a compatible build runtime, and appropriate preview/production environment values. This is a build-settings mapping, not evidence of a connected project. |
-| Resend                    | No integration exists. Implement a server endpoint before configuring transactional sending; verify provider/domain setup and delivery separately.                                                                                                                                                                              |
-| Domain, DNS, TLS, mailbox | `business.url` is a metadata/build input only. Domain ownership, DNS, HTTPS, mailbox provisioning, and account access cannot be established from source.                                                                                                                                                                        |
-| Future inquiries          | A static deployment does not create `/api/inquiries`. Live delivery requires an implemented HTTPS endpoint on the same origin; any function runtime or routing/proxy setup is separate work.                                                                                                                                    |
+### Configure the confirmed Vercel project
 
-Repository-side configuration consists of source, manifests/lockfile, Astro/tool configuration, and the sanitized example. Provider dashboards, build-environment settings, secrets, DNS, and mailbox configuration are external. Older documents mention S3/CloudFront as possibilities; no such infrastructure is provisioned here.
+1. In the Vercel dashboard, select the correct account/team and the existing Unshaken Painting project. Verify its linked repository, root directory, domains, and owner before editing settings; do not create or relink a project based only on its name.
+2. In project Settings, verify the Astro framework preset, npm installation (`npm ci`), and build command (`npm run build`). Keep the adapter-managed output configuration; remove an obsolete custom `dist` output override if one exists. Select Node **24.x** and verify the available build version satisfies the tool requirements above.
+3. Open the project’s **Environment Variables** settings. Add the seven names in the table above with the confirmed values and intended scope. Store `RESEND_API_KEY` as **Secret** (formerly **Sensitive**) and keep server variables free of any `PUBLIC_` prefix. Vercel documents [variable management](https://vercel.com/docs/environment-variables/managing-environment-variables) and [Secret classification](https://vercel.com/docs/environment-variables/sensitive-environment-variables).
+4. Scope deliberately: Production gets the production sender, confirmed recipient, and sending credential; enable `CONTACT_DELIVERY_ENABLED=true` and `PUBLIC_INQUIRY_MODE=live` only when ready. General Preview environments should use `preview`/`false`, `PUBLIC_SITE_LAUNCH_READY=false`, and no production key. For a trusted test branch, use branch-specific Preview overrides and approved test configuration; do not expose credentials to fork/untrusted code. Development settings are separate from Production; use only explicitly authorized local credentials in the ignored file.
+5. Save the settings. A new deployment is required for both runtime values and public build flags to take effect. Deployment/promotion, code pushes, DNS changes, mailbox-record changes, and ownership changes require explicit authorization; none was performed as part of this integration.
 
-Before launch:
+A sending domain and an everyday mailbox are separate services. Resend domain verification must not replace existing mailbox MX records. If domain verification needs DNS work, have the owner review the exact provider records separately.
 
-1. Confirm public/legal naming, remaining owner-approved facts and photography, detailed warranty decisions, review permissions, and visible placeholders.
-2. Validate the static build and responsive UI. Reconcile verifier expectations for any approved release/indexing changes.
-3. Verify hosting routes/404 behavior, domain/DNS/TLS, build settings, preview isolation, and account access externally. Indexing flags do not protect private previews.
-4. If enabling inquiries, implement and test the endpoint contract, abuse/upload/privacy controls, sender/recipient configuration, and mailbox delivery with authorized test recipients. Keep preview delivery disabled until this is complete.
-5. Confirm final environment values, rebuild the release, and check the served metadata, robots rules, and contact behavior. Keep a known-good build/source reference and its environment settings for recovery.
+### Verify one authorized real submission
 
-No automated release or rollback mechanism is included. Where the chosen host supports restoring a prior deployment, verify that procedure there. Otherwise recovery requires redeploying a retained known-good static artifact or rebuilding its source with the matching lockfile and build-time settings. Restoring static files does not roll back external DNS, a future backend, or email/mailbox configuration.
+Complete mocked tests and confirm the key, verified sender, recipient inbox, and environment scope first. Then perform **at most one** clearly labeled `[WEBSITE TEST]` submission through the actual form/backend using synthetic details, with `[WEBSITE TEST]` in the name and description and no photos. Use an authorized test contact address, not a real customer’s details. The email subject stays the application’s fixed inquiry subject.
+
+Record these separately:
+
+- **Application acceptance:** the actual POST returned HTTP 200 and `{ "accepted": true }`, and the UI displayed acceptance/reset.
+- **Provider acceptance:** locate that synthetic inquiry in Resend’s dashboard, verify its message ID, and record it privately. The public response deliberately omits the ID.
+- **Provider delivery status:** inspect the provider event/status. A returned ID alone does not establish delivery.
+- **Inbox receipt:** ask the user or Grant to confirm the message is in the intended inbox, check spam if needed, and verify Reply-To. Provider delivery status alone does not establish that it was read or visible in the inbox.
+
+If configuration or access prevents any step, report it as unverified and do not claim a live test. Do not resend automatically after an ambiguous timeout; inspect Resend’s records first. Turn off test delivery settings when finished if that environment is intended to remain a non-sending preview.
+
+Before launch, confirm any remaining owner decisions, review the responsive UI, confirm deployed routing/404 and TLS, decide production abuse controls and customer-data handling, and run the launch-mode verifier against the intended production build. Keep already approved biography and photography intact. The implementation is available for local mocked verification and deployment preparation; **production and inbox delivery are not verified**.
+
+No automated release or rollback mechanism is included. Keep a known-good source/deployment reference and its environment settings. Restoring a Vercel deployment does not roll back DNS, Resend state, or mailbox configuration, and old deployments can retain old credentials/settings; confirm the serving deployment after any recovery.
 
 ## Troubleshooting
 
-| Symptom                                                 | Check                                                                                                                                                                                                                                                    |
-| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Installation/lint fails on a recent Node version        | Check the stricter lint/parser engine range above, not just Astro’s minimum. For image-binary errors, inspect the platform-specific dependency compatibility; do not silently update the lockfile.                                                       |
-| Wrong local page, occupied port, or source edits absent | Read Astro’s reported URL and `dev`/`preview` status. Preview serves the last build; rebuild it. Stop only the server you intend to replace.                                                                                                             |
-| Form says “local preview”                               | Expected unless both launch/mode flags are exact matches. Nothing is sent or saved by the application.                                                                                                                                                   |
-| Form cannot confirm receipt                             | Check HTTPS, same-origin `/api/` path, actual endpoint existence, HTTP status, and JSON acknowledgment. Local HTTP is intentionally rejected in live mode; configuring a path does not create its handler. Avoid sending real inquiries while debugging. |
-| Submit remains disabled                                 | Check browser script loading/errors or JavaScript being disabled. The disabled state prevents unsafe native posting; phone fallback remains available.                                                                                                   |
-| Project, review, portrait, or warranty is absent        | Inspect publication/permission/approval gates. FAQ answers and model-only fields do not render automatically.                                                                                                                                            |
-| Comparison is misaligned                                | Verify the original pair/view and per-image crop settings. Different perspectives may remain incompatible; preserve a truthful note instead of stretching a photo.                                                                                       |
-| Build verifier fails after an intended change           | Read its exact assertion. Check for stale `dist/`, live indexing values, changed hardcoded metadata/pairs/routes, or newly approved copy still on the forbidden list. Update expectations only alongside the authorized behavior change.                 |
-| Site is not indexed                                     | Preview defaults deliberately block indexing. Inspect the built/served robots metadata and `robots.txt`; external crawler behavior is not tested here.                                                                                                   |
+| Symptom                                                         | Check                                                                                                                                                                                                                                                              |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Installation/lint fails on a recent Node version                | Check the stricter lint/parser engine range above, not just Astro’s minimum. For image-binary errors, inspect the platform-specific dependency compatibility; do not silently update the lockfile.                                                                 |
+| Wrong local page, occupied port, or source edits absent         | Read Astro’s reported URL and `dev` status. Use `npm run dev` with this adapter; `npm run preview` is unsupported. Stop only the server you intend to replace.                                                                                                     |
+| Form says “local preview”                                       | Expected unless `PUBLIC_INQUIRY_MODE` is exactly `live`. Preview makes no network call; indexing is independent. Restart development or rebuild after changing public flags.                                                                                       |
+| Form cannot confirm receipt                                     | Inspect the POST status and safe code. 503 means delivery is disabled or server configuration is missing/invalid; 502 means provider rejection, missing ID, or exception. Check private server configuration and sanitized diagnostics; use mocks while debugging. |
+| API returns 403 or a command-line test differs from the browser | Keep Astro origin protection enabled. A form POST needs a matching `Origin`; mismatched/cross-site requests are rejected. Do not use this check as a rate limiter.                                                                                                 |
+| API returns 413, 415, or 422                                    | Body limit is 64 KiB; send multipart or URL-encoded text, valid fields, and an empty `website` honeypot. Remove photos before live submission. JSON payloads and uploads are unsupported.                                                                          |
+| Resend accepts but Grant cannot find the email                  | Check the configured recipient and provider delivery/bounce records, then ask Grant to inspect inbox/spam. Acceptance is not proof of inbox receipt.                                                                                                               |
+| Submit remains disabled                                         | Check browser script loading/errors or JavaScript being disabled. The disabled state prevents unsafe native posting; phone fallback remains available.                                                                                                             |
+| Project, review, portrait, or warranty is absent                | Inspect publication/permission/approval gates. FAQ answers and model-only fields do not render automatically.                                                                                                                                                      |
+| Comparison is misaligned                                        | Verify the original pair/view and per-image crop settings. Different perspectives may remain incompatible; preserve a truthful note instead of stretching a photo.                                                                                                 |
+| Build verifier fails after an intended change                   | Read its exact assertion. Check for stale/missing `.vercel/output/`, live indexing values, changed hardcoded metadata/pairs/routes, or newly approved copy still on the forbidden list. Update expectations only alongside the authorized behavior change.         |
+| Site is not indexed                                             | Preview defaults deliberately block indexing. Inspect the built/served robots metadata and `robots.txt`; external crawler behavior is not tested here.                                                                                                             |
 
 ## Related documentation
 
-- [Inquiry endpoint contract](docs/INQUIRY-ENDPOINT.md): future request/response and server responsibilities. Its original “only client module” statement is historical; Home/Work now also have slider code.
+- [Inquiry endpoint contract](docs/INQUIRY-ENDPOINT.md): implemented payload, server validation, response statuses, configuration, and verification limits.
 - [Project photographs](src/assets/projects/README.md): authentic source files, permission requirements, EXIF orientation, pairing evidence, and current alignment settings.
 - [V1 report](docs/V1-REPORT.md): historical initial architecture, content assumptions, and QA.
 - [V2 report](docs/V2-REPORT.md): historical content-approval preparation and unresolved business decisions.

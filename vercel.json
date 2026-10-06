@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    { "source": "/About(/)?", "destination": "/about/", "statusCode": 301 },
+    { "source": "/Contact(/)?", "destination": "/contact/", "statusCode": 301 },
+    { "source": "/Quote(/)?", "destination": "/contact/", "statusCode": 301 },
+    { "source": "/Gallery(/)?", "destination": "/work/", "statusCode": 301 },
+    { "source": "/Reviews(/)?", "destination": "/work/", "statusCode": 301 },
+    {
+      "source": "/InteriorPainting(/)?",
+      "destination": "/services/#residential",
+      "statusCode": 301
+    },
+    {
+      "source": "/ExteriorPainting(/)?",
+      "destination": "/services/#residential",
+      "statusCode": 301
+    },
+    {
+      "source": "/CabinetRefinishing(/)?",
+      "destination": "/services/#repaints-specialty",
+      "statusCode": 301
+    },
+    {
+      "source": "/DeckStaining(/)?",
+      "destination": "/services/#repaints-specialty",
+      "statusCode": 301
+    }
+  ]
+}

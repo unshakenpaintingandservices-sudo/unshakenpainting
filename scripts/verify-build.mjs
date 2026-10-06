@@ -2,7 +2,65 @@ import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
-const root = path.resolve('dist');
+// Supplied by the pinned Vercel adapter; use its platform route transformer.
+import { getTransformedRoutes, mergeRoutes } from '@vercel/routing-utils';
+const mode = process.argv[2] ?? '--mode=preview';
+assert.ok(
+  ['--mode=preview', '--mode=launch'].includes(mode),
+  'Use --mode=preview (default) or --mode=launch',
+);
+const launch = mode === '--mode=launch';
+// Validate the actual Vercel public artifact, never a stale pre-adapter dist/.
+const root = path.resolve('.vercel/output/static');
+const vercelOutput = path.resolve('.vercel/output');
+const vercelConfig = JSON.parse(
+  await readFile(path.join(vercelOutput, 'config.json'), 'utf8'),
+);
+const projectConfig = JSON.parse(await readFile('vercel.json', 'utf8'));
+const { routes: projectRoutes, error: routeError } =
+  getTransformedRoutes(projectConfig);
+assert.equal(routeError, null, 'Vercel project routes must be valid');
+// Astro emits adapter routes only. Simulate Vercel's merge of project rules
+// with that artifact; a deployed HTTP smoke test is still required.
+const effectiveRoutes = mergeRoutes({
+  userRoutes: projectRoutes,
+  builds: [
+    {
+      entrypoint: '.',
+      use: '@vercel/static-build',
+      routes: vercelConfig.routes,
+    },
+  ],
+});
+const contactRoute = effectiveRoutes.find(
+  (route) => route.src === '^/api/contact/$',
+);
+assert.ok(
+  contactRoute?.dest,
+  'Contact must route to an on-demand Vercel function',
+);
+const functionConfig = JSON.parse(
+  await readFile(
+    path.join(
+      vercelOutput,
+      `functions/${contactRoute.dest}.func/.vc-config.json`,
+    ),
+    'utf8',
+  ),
+);
+assert.match(functionConfig.runtime, /^nodejs(?:22|24)\.x$/);
+assert.ok(
+  (
+    await stat(
+      path.join(
+        vercelOutput,
+        `functions/${contactRoute.dest}.func`,
+        functionConfig.handler,
+      ),
+    )
+  ).isFile(),
+  'Contact function handler must exist',
+);
 const pages = [
   'index.html',
   'services/index.html',
@@ -48,7 +106,12 @@ for (const file of pages) {
     1,
     `One H1 required: ${file}`,
   );
-  assert.match(html, /name="robots" content="noindex, nofollow"/);
+  const expectedRobots =
+    launch && file !== '404.html' ? 'index, follow' : 'noindex, nofollow';
+  assert.ok(
+    html.includes(`name="robots" content="${expectedRobots}"`),
+    `Incorrect ${mode} indexing directive: ${file}`,
+  );
   assert.match(html, /rel="canonical" href="https:\/\/unshakenpainting.com\//);
   assert.match(html, /property="og:title"/);
   const schema = JSON.parse(
@@ -227,6 +290,20 @@ for (const file of pages) {
       }
     }
   }
+  if (file === 'contact/index.html') {
+    assert.match(html, /action="\/api\/contact\/"/);
+    assert.match(html, /name="website"/);
+    if (launch)
+      assert.doesNotMatch(
+        html,
+        /<div class="preview-notice"/,
+        'Launch artifact must compile the live inquiry interface',
+      );
+    assert.doesNotMatch(
+      html,
+      /RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL|CONTACT_DELIVERY_ENABLED/,
+    );
+  }
   for (const script of html.matchAll(/(<script\b[^>]*>)(.*?)<\/script>/gs)) {
     if (
       attribute(script[1], 'type') === 'module' &&
@@ -239,8 +316,85 @@ const sitemap = await readFile(path.join(root, 'sitemap.xml'), 'utf8');
 assert.equal((sitemap.match(/<loc>/g) || []).length, 5);
 assert.match(
   await readFile(path.join(root, 'robots.txt'), 'utf8'),
-  /Disallow: \//,
+  launch ? /^Allow: \/$/m : /^Disallow: \/$/m,
 );
+// Exercise the merged platform routing, including adapter slash normalization.
+const legacyRedirects = {
+  '/About': '/about/',
+  '/Contact': '/contact/',
+  '/Quote': '/contact/',
+  '/Gallery': '/work/',
+  '/Reviews': '/work/',
+  '/InteriorPainting': '/services/#residential',
+  '/ExteriorPainting': '/services/#residential',
+  '/CabinetRefinishing': '/services/#repaints-specialty',
+  '/DeckStaining': '/services/#repaints-specialty',
+};
+for (const [legacy, expected] of Object.entries(legacyRedirects)) {
+  for (const start of [legacy, `${legacy}/`]) {
+    let current = start;
+    const seen = new Set();
+    for (let hop = 0; hop < 4; hop++) {
+      assert.ok(!seen.has(current), `Redirect loop from ${start}`);
+      seen.add(current);
+      // Fragments stay in the browser and never participate in host matching.
+      const currentUrl = new URL(current, 'https://unshakenpainting.com');
+      const rule = effectiveRoutes.find(
+        (route) =>
+          route.src &&
+          route.headers?.Location &&
+          new RegExp(route.src).test(currentUrl.pathname),
+      );
+      if (!rule) break;
+      assert.ok(
+        [301, 308].includes(rule.status),
+        'Legacy redirect must be permanent',
+      );
+      const location = currentUrl.pathname.replace(
+        new RegExp(rule.src),
+        rule.headers.Location,
+      );
+      const nextUrl = new URL(location, currentUrl);
+      assert.equal(
+        nextUrl.origin,
+        currentUrl.origin,
+        'Redirect must stay local',
+      );
+      if (!location.includes('#')) nextUrl.hash = currentUrl.hash;
+      current = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+    }
+    assert.equal(current, expected, `Incorrect legacy redirect from ${start}`);
+    const [pathname, anchor] = current.split('#');
+    const destination = await readFile(
+      path.join(root, pathname, 'index.html'),
+      'utf8',
+    );
+    if (anchor)
+      assert.ok(
+        destination.includes(`id="${anchor}"`),
+        'Redirect anchor must exist',
+      );
+  }
+}
+const unchangedPaths = [
+  '/about/',
+  '/contact/',
+  '/services/',
+  '/work/',
+  '/api/contact/',
+  '/About/extra/',
+  '/admin/',
+];
+for (const pathname of unchangedPaths)
+  assert.ok(
+    !effectiveRoutes.some(
+      (route) =>
+        route.src &&
+        route.headers?.Location &&
+        new RegExp(route.src).test(pathname),
+    ),
+    `Legacy redirects must not capture ${pathname}`,
+  );
 async function filesIn(folder) {
   const entries = await readdir(folder, { withFileTypes: true });
   const values = await Promise.all(
@@ -253,6 +407,21 @@ async function filesIn(folder) {
   return values.flat();
 }
 const outputFiles = await filesIn(root);
+const deploymentFiles = await filesIn(vercelOutput);
+assert.ok(
+  !deploymentFiles.some((file) => /^\.env(?:\.|$)/.test(path.basename(file))),
+  'Environment files must never be packaged in the deployment',
+);
+// Server code may contain environment variable names, never literal provider keys.
+// Report only the file path on failure, not any matched secret.
+for (const file of deploymentFiles.filter((file) =>
+  /\.(?:html|js|mjs|cjs|json|map|txt|xml)$/.test(file),
+)) {
+  assert.ok(
+    !/\bre_[A-Za-z0-9_-]{24,}\b/.test(await readFile(file, 'utf8')),
+    `Possible Resend credential in deployment output: ${path.relative(vercelOutput, file)}`,
+  );
+}
 assert.ok(
   !outputFiles.some((file) => originalPhoto.test(path.basename(file))),
   'Source project JPEGs must not be copied into the public build',
@@ -303,6 +472,12 @@ console.log(
   JSON.stringify(
     {
       pages: pages.length,
+      indexingMode: launch ? 'launch' : 'preview',
+      checkedLegacyRedirects: Object.keys(legacyRedirects).length * 2,
+      checkedUnchangedPaths: unchangedPaths.length,
+      routingVerification: 'local Vercel project/build route merge simulation',
+      outputDirectory: path.relative(process.cwd(), root),
+      contactFunctionRuntime: functionConfig.runtime,
       sitemapRoutes: 5,
       checkedLinks,
       checkedImages,
@@ -310,7 +485,7 @@ console.log(
       checkedComparisons,
       clientJavaScriptBytes: bytes,
       checks:
-        'metadata, local assets, responsive images, comparison pairs, accessible controls, links, anchor targets, schema, preview indexing, claims, credential patterns',
+        'metadata, local assets, responsive images, comparison pairs, accessible controls, links, anchor targets, schema, indexing mode, legacy redirects, claims, credential patterns',
     },
     null,
     2,

@@ -15,9 +15,16 @@
     "verify:build": "node scripts/verify-build.mjs"
   },
   "dependencies": {
+    "@astrojs/vercel": "11.0.12",
     "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource-variable/source-serif-4": "^5.3.0",
-    "astro": "^7.3.2"
+    "astro": "^7.3.2",
+    "resend": "6.32.1"
+  },
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    }
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
