@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "astro check",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "verify:build": "node scripts/verify-build.mjs"
+    "verify:build": "node scripts/verify-build.mjs",
+    "test:inquiry-mode": "node scripts/verify-inquiry-mode.mjs"
   },
   "dependencies": {
     "@astrojs/vercel": "11.0.12",

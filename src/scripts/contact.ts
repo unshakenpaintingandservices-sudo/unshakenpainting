@@ -17,7 +17,7 @@ if (form) {
   const email = form.querySelector<HTMLInputElement>('#email')!;
   const phone = form.querySelector<HTMLInputElement>('#phone')!;
   const clear = form.querySelector<HTMLButtonElement>('button[type="reset"]')!;
-  const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
+  const live = form.dataset.inquiryMode === 'live';
   const idleLabel = submit.textContent!;
   let pending = false;
   const showErrors = (errors: InquiryErrors) => {
@@ -131,7 +131,7 @@ if (form) {
     try {
       const outcome = await deliverInquiry(data, {
         mode: live ? 'live' : 'preview',
-        endpoint: import.meta.env.PUBLIC_INQUIRY_ENDPOINT || '/api/contact/',
+        endpoint: form.getAttribute('action') || '/api/contact/',
         origin: window.location.origin,
       });
       accepted = outcome.status === 'accepted';

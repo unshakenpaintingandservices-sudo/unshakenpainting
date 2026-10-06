@@ -1,5 +1,13 @@
 ---
-const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
+import { resolveInquiryConfig } from '../lib/inquiry-mode';
+
+const inquiry = resolveInquiryConfig({
+  targetEnvironment: process.env.VERCEL_TARGET_ENV,
+  environment: process.env.VERCEL_ENV,
+  explicitMode: import.meta.env.PUBLIC_INQUIRY_MODE,
+  explicitEndpoint: import.meta.env.PUBLIC_INQUIRY_ENDPOINT,
+});
+const live = inquiry.mode === 'live';
 ---
 
 <div class="inquiry-panel">
@@ -21,7 +29,8 @@ const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
   <form
     id="inquiry-form"
     method="post"
-    action="/api/contact/"
+    action={inquiry.endpoint}
+    data-inquiry-mode={inquiry.mode}
     aria-label="Estimate request"
     aria-describedby="required-help"
   >

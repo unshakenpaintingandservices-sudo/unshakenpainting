@@ -4,12 +4,22 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 // Supplied by the pinned Vercel adapter; use its platform route transformer.
 import { getTransformedRoutes, mergeRoutes } from '@vercel/routing-utils';
-const mode = process.argv[2] ?? '--mode=preview';
+const args = process.argv.slice(2);
+const mode = args.find((arg) => arg.startsWith('--mode=')) ?? '--mode=preview';
 assert.ok(
   ['--mode=preview', '--mode=launch'].includes(mode),
   'Use --mode=preview (default) or --mode=launch',
 );
 const launch = mode === '--mode=launch';
+const inquiryMode =
+  args.find((arg) => arg.startsWith('--inquiry-mode='))?.split('=')[1] ??
+  (launch ? 'live' : 'preview');
+assert.ok(['live', 'preview'].includes(inquiryMode), 'Invalid inquiry mode');
+assert.ok(
+  args.every((arg) => [mode, `--inquiry-mode=${inquiryMode}`].includes(arg)),
+  'Use --mode=preview|launch and optional --inquiry-mode=preview|live',
+);
+const liveInquiry = inquiryMode === 'live';
 // Validate the actual Vercel public artifact, never a stale pre-adapter dist/.
 const root = path.resolve('.vercel/output/static');
 const vercelOutput = path.resolve('.vercel/output');
@@ -292,17 +302,18 @@ for (const file of pages) {
   }
   if (file === 'contact/index.html') {
     assert.match(html, /action="\/api\/contact\/"/);
+    assert.ok(html.includes(`data-inquiry-mode="${inquiryMode}"`));
     assert.match(html, /name="website"/);
     const submit = [
       ...html.matchAll(/(<button\b[^>]*>)(.*?)<\/button>/gs),
     ].find((match) => attribute(match[1], 'id') === 'submit-inquiry');
     assert.equal(
       submit?.[2].trim(),
-      launch ? 'Send estimate request' : 'Check request · preview',
+      liveInquiry ? 'Send estimate request' : 'Check request · preview',
       'Submit wording must match the compiled inquiry mode',
     );
     const previewHeading = 'Preview mode — requests are not sent.';
-    assert.equal(html.includes(previewHeading), !launch);
+    assert.equal(html.includes(previewHeading), !liveInquiry);
     assert.doesNotMatch(html, /Local preview — delivery is turned off/);
     for (const [id, type, autocomplete] of [
       ['name', 'text', 'name'],
@@ -328,7 +339,7 @@ for (const file of pages) {
     const contactCode = contactScripts.join('\n');
     assert.ok(
       contactCode.includes(
-        launch ? 'Sending your request…' : 'Checking your request…',
+        liveInquiry ? 'Sending your request…' : 'Checking your request…',
       ),
       'Pending feedback must match the compiled inquiry mode',
     );
@@ -337,21 +348,21 @@ for (const file of pages) {
       contactCode,
       /This is a local preview|accepted for email delivery to Grant/,
     );
-    if (!launch)
+    if (!liveInquiry)
       assert.ok(
         contactCode.includes(
           'This is preview mode: no request or photos were sent to Grant',
         ),
       );
-    if (launch)
+    if (liveInquiry)
       assert.doesNotMatch(
         html,
         /<div class="preview-notice"/,
-        'Launch artifact must compile the live inquiry interface',
+        'Live inquiry artifact must render the live interface',
       );
     assert.doesNotMatch(
       html,
-      /RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL|CONTACT_DELIVERY_ENABLED/,
+      /RESEND_API_KEY|CONTACT_FROM_EMAIL|CONTACT_TO_EMAIL|CONTACT_DELIVERY_ENABLED|VERCEL_TARGET_ENV|VERCEL_ENV|PUBLIC_INQUIRY_MODE|PUBLIC_INQUIRY_ENDPOINT/,
     );
   }
   for (const script of html.matchAll(/(<script\b[^>]*>)(.*?)<\/script>/gs)) {
@@ -523,6 +534,7 @@ console.log(
     {
       pages: pages.length,
       indexingMode: launch ? 'launch' : 'preview',
+      inquiryMode,
       checkedLegacyRedirects: Object.keys(legacyRedirects).length * 2,
       checkedUnchangedPaths: unchangedPaths.length,
       routingVerification: 'local Vercel project/build route merge simulation',
