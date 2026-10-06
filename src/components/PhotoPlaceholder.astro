@@ -1,0 +1,25 @@
+---
+interface Props {
+  compact?: boolean;
+  owner?: boolean;
+}
+const { compact = false, owner = false } = Astro.props;
+---
+
+<div
+  class:list={['photo-placeholder', { compact, 'owner-placeholder': owner }]}
+  role="img"
+  aria-label={
+    owner
+      ? 'Development placeholder for an approved photograph of Grant. No portrait supplied.'
+      : 'Development placeholder for an authentic Unshaken project photograph. No project is shown.'
+  }
+>
+  <span class="placeholder-badge">
+    {owner ? 'Owner photograph' : 'Project photograph'}
+  </span>
+  <div class="placeholder-center">
+    <p>{owner ? 'Portrait to come.' : 'Photographs to come.'}</p>
+  </div>
+  <span class="placeholder-caption">Photograph pending</span>
+</div>

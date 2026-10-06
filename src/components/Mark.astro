@@ -1,0 +1,28 @@
+---
+interface Props {
+  kind?: 'paint' | 'study' | 'field';
+  class?: string;
+}
+const { kind = 'study', class: className } = Astro.props;
+---
+
+<svg
+  class:list={['unshaken-mark', `mark-${kind}`, className]}
+  viewBox={kind === 'study' ? '0 0 108 92' : '0 0 600 440'}
+  preserveAspectRatio={kind === 'paint' ? 'none' : 'xMidYMid meet'}
+  aria-hidden="true"
+  focusable="false"
+>
+  {kind === 'paint' ? (
+    <path d="M9 8 138 6 253 9 382 5 493 8 588 6 590 92 587 186 592 286 589 370 593 429 475 432 370 428 244 433 132 430 8 433 11 329 6 228 10 115Z" />
+  ) : kind === 'field' ? (
+    <path d="M130 6C242-18 339 27 449 17c105-9 147 56 162 151 20 127-59 237-156 277-81 34-164-7-260-4C89 444-4 361 2 257 8 151 20 30 130 6Z" />
+  ) : (
+    <>
+      <path class="study-navy" d="M8 7h87v15H8z" />
+      <path class="study-cedar" d="M0 30h76v18H0z" />
+      <path class="study-sage" d="M16 56h92v13H16z" />
+      <path class="study-brass" d="M9 78h58v7H9z" />
+    </>
+  )}
+</svg>

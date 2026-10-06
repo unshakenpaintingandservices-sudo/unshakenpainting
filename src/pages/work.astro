@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RecentWork from '../components/RecentWork.astro';
+import Mark from '../components/Mark.astro';
+import Reviews from '../components/Reviews.astro';
+import { publishedReviews } from '../data/reviews';
+import { business, locationLabel } from '../data/business';
+---
+
+<Layout
+  title={`Recent Painting Work | ${business.shortName}`}
+  description={`See actual projects from ${business.shortName}, based in ${locationLabel}, including a deck transformation with three before-and-after views.`}
+>
+  <section class="page-heading work-heading">
+    <Mark kind="field" />
+    <div class="container">
+      <p class="eyebrow">
+        <span class="foundation-line" aria-hidden="true"></span>Unshaken
+        Painting
+      </p>
+      <h1>Work.</h1>
+      <div class="work-heading-note">
+        <Mark />
+        <p>Actual Unshaken projects. See the difference, before and after.</p>
+      </div>
+    </div>
+  </section>
+  <RecentWork full />
+  {publishedReviews.length > 0 && <Reviews />}
+</Layout>

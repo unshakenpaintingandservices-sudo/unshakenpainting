@@ -1,0 +1,76 @@
+---
+import { Image } from 'astro:assets';
+import PhotoPlaceholder from './PhotoPlaceholder.astro';
+import Icon from './Icon.astro';
+import Mark from './Mark.astro';
+import { business } from '../data/business';
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+
+<section class:list={['section', 'owner-section', { 'owner-intro': compact }]}>
+  <div class="container owner-grid">
+    <div class="owner-visual">
+      <div class="owner-photo">
+        {!compact && <Mark kind="paint" />}
+        {business.ownerPhoto?.approved ? (
+          <Image
+            src={business.ownerPhoto.image}
+            alt={business.ownerPhoto.alt}
+            widths={[260, 520, 780]}
+            sizes={
+              compact
+                ? '(max-width: 640px) 220px, 260px'
+                : '(max-width: 640px) 280px, 320px'
+            }
+            format="webp"
+            loading="lazy"
+          />
+        ) : (
+          <PhotoPlaceholder owner compact />
+        )}
+      </div>
+      <p>
+        <strong>{business.owner}</strong>
+        <span>
+          {business.ownerTitle}, {business.shortName}
+        </span>
+      </p>
+    </div>
+    <div class="owner-copy">
+      {compact ? (
+        <>
+          <h2>Meet Grant.</h2>
+          <p>
+            Grant brings a keen attention to detail and a personal approach to
+            residential painting.
+          </p>
+          <p>Hard work, honesty, and doing right by people guide his work.</p>
+        </>
+      ) : (
+        <>
+          <p class="eyebrow">Owner & painter</p>
+          <h2>
+            You’ll know who’s
+            <br /> looking after the work.
+          </h2>
+          <p>
+            Grant’s approach to painting starts with attention to detail,
+            honesty, and care for every homeowner.
+          </p>
+          <a class="text-link" href="/contact/">
+            Talk with Grant <Icon />
+          </a>
+        </>
+      )}
+      {compact && (
+        <a class="text-link" href="/about/#grant-story">
+          More about Grant
+          <Icon />
+        </a>
+      )}
+    </div>
+  </div>
+</section>

@@ -1,0 +1,22 @@
+---
+import { business } from '../data/business';
+import Icon from './Icon.astro';
+---
+
+<section class="contact-cta">
+  <div class="container cta-inner">
+    <div>
+      <h2>How may I serve you?</h2>
+    </div>
+    <div class="cta-actions">
+      <a class="button" href={business.phone.href}>
+        <Icon name="phone" />
+        Call Grant
+      </a>
+      <a class="button button-outline" href="/contact/">
+        Request an Estimate
+        <Icon />
+      </a>
+    </div>
+  </div>
+</section>

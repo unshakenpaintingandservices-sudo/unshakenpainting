@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HeroVisual from '../components/HeroVisual.astro';
+import Mark from '../components/Mark.astro';
+import ContactCTA from '../components/ContactCTA.astro';
+import Icon from '../components/Icon.astro';
+import { business, locationLabel } from '../data/business';
+import RecentWork from '../components/RecentWork.astro';
+import Owner from '../components/Owner.astro';
+---
+
+<Layout
+  title={`Painting in ${locationLabel} | ${business.shortName}`}
+  description={`Residential, commercial, and new construction painting around ${locationLabel}. Owner Grant Dorney stays involved from estimate to final walkthrough.`}
+>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">
+          <span class="foundation-line" aria-hidden="true"></span>
+          {locationLabel}
+        </p>
+        <h1>
+          Careful painting.
+          <br />
+          <em>A familiar face.</em>
+        </h1>
+        <div class="hero-details">
+          <p class="hero-intro">
+            Painting for homes, businesses, and new spaces around Cambridge.
+          </p>
+          <div class="hero-actions">
+            <a class="button" href={business.phone.href}>
+              <Icon name="phone" />
+              Call Grant
+            </a>
+            <a class="button button-outline" href="/contact/">
+              Request an Estimate
+              <Icon />
+            </a>
+          </div>
+          <p class="hero-note">Grant Dorney · Owner & painter</p>
+        </div>
+      </div>
+      <div class="hero-media">
+        <Mark kind="paint" />
+        <HeroVisual />
+      </div>
+    </div>
+  </section>
+  <section class="section home-services">
+    <div class="container painting-intro">
+      <div>
+        <h2>What Grant paints.</h2>
+        <p>
+          From a single room to a new building, start with the space you have in
+          mind.
+        </p>
+        <a class="text-link" href="/services/">
+          See painting services <Icon />
+        </a>
+      </div>
+      <ul class="painting-types" aria-label="Painting services">
+        <li>Residential</li>
+        <li>Commercial</li>
+        <li>New construction</li>
+        <li>Repaints</li>
+      </ul>
+    </div>
+  </section>
+  <RecentWork />
+  <Owner compact />
+  <ContactCTA />
+</Layout>

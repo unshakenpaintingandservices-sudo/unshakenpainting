@@ -1,0 +1,136 @@
+---
+import { Image } from 'astro:assets';
+import {
+  publishedProjects,
+  projectCover,
+  projectComparisons,
+} from '../data/projects';
+import BeforeAfterSlider from './BeforeAfterSlider.astro';
+import PhotoPlaceholder from './PhotoPlaceholder.astro';
+import Icon from './Icon.astro';
+interface Props {
+  full?: boolean;
+}
+const { full = false } = Astro.props;
+const visible = full ? publishedProjects : publishedProjects.slice(0, 3);
+const ProjectHeading = full ? 'h2' : 'h3';
+---
+
+<section
+  class:list={['section', 'work-section', { 'work-page-section': full }]}
+>
+  <div class="container">
+    {!full && (
+      <div class="section-heading">
+        <div>
+          <h2>Recent work.</h2>
+        </div>
+      </div>
+    )}
+    {visible.length ? (
+      <div class="project-grid">
+        {visible.map((project, index) => {
+          const cover = projectCover(project);
+          const comparisons = projectComparisons(project);
+          const shownComparisons = full ? comparisons : comparisons.slice(0, 1);
+          const primarySizes = full
+            ? '(max-width: 640px) calc(100vw - 48px), (min-width: 1440px) 1050px, 74vw'
+            : '(max-width: 960px) 90vw, (min-width: 1440px) 770px, 54vw';
+          if (shownComparisons.length) {
+            return (
+              <article
+                id={full ? project.id : undefined}
+                class:list={[
+                  'project-card project-card--comparison',
+                  full ? 'project-card--full' : 'project-card--teaser',
+                ]}
+                aria-labelledby={`${full ? 'work' : 'recent'}-${project.id}-title`}
+              >
+                <div class="project-summary">
+                  <p class="eyebrow">Completed project</p>
+                  <ProjectHeading
+                    class="project-title"
+                    id={`${full ? 'work' : 'recent'}-${project.id}-title`}
+                  >
+                    {project.title}
+                  </ProjectHeading>
+                  <p>{project.description}</p>
+                  {!full && (
+                    <a href={`/work/#${project.id}`} class="text-link">
+                      See the full project <Icon />
+                    </a>
+                  )}
+                </div>
+                <div class="project-comparisons">
+                  {shownComparisons.map((comparison, comparisonIndex) => (
+                    <div
+                      class:list={[
+                        'project-comparison',
+                        {
+                          'project-comparison--primary': comparisonIndex === 0,
+                        },
+                      ]}
+                    >
+                      <BeforeAfterSlider
+                        comparison={comparison}
+                        id={`${full ? 'work' : 'recent'}-${project.id}-${comparison.id}`}
+                        sizes={
+                          comparisonIndex === 0
+                            ? primarySizes
+                            : '(max-width: 640px) calc(100vw - 48px), (min-width: 1440px) 610px, 43vw'
+                        }
+                        loading={
+                          full && index === 0 && comparisonIndex === 0
+                            ? 'eager'
+                            : 'lazy'
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </article>
+            );
+          }
+          return (
+            <article class="project-card">
+              {cover && (
+                <Image
+                  src={cover.image}
+                  alt={cover.alt}
+                  widths={[400, 700, 1000, 1400]}
+                  sizes={
+                    index % 3 === 0
+                      ? '(max-width: 640px) 90vw, (min-width: 1440px) 1050px, 74vw'
+                      : '(max-width: 640px) 90vw, (min-width: 1440px) 610px, 43vw'
+                  }
+                  format="webp"
+                  loading="lazy"
+                />
+              )}
+              <p class="eyebrow">
+                {[project.service, project.city].filter(Boolean).join(' · ')}
+              </p>
+              <ProjectHeading class="project-title">
+                {project.title}
+              </ProjectHeading>
+              <p>{project.description}</p>
+              {!full && (
+                <a href="/work/" class="text-link">
+                  View our work <Icon />
+                </a>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    ) : (
+      <div class:list={['work-empty', { 'work-empty-preview': !full }]}>
+        {full ? (
+          <PhotoPlaceholder compact />
+        ) : (
+          <p>Photographs of Unshaken’s actual projects are being gathered.</p>
+        )}
+      </div>
+    )}
+  </div>
+</section>

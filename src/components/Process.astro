@@ -1,0 +1,30 @@
+---
+import { processSteps } from '../data/services';
+---
+
+<section class="section process-section">
+  <div class="container">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Working with Grant</p>
+        <h2>It starts with a conversation.</h2>
+      </div>
+      <p class="section-intro">
+        You don’t need all the details figured out.
+        <br />
+        Just a place to start.
+      </p>
+    </div>
+    <ol class="process-list" role="list">
+      {processSteps.map((step, i) => (
+        <li>
+          <span class="step-number" aria-hidden="true">
+            0{i + 1}
+          </span>
+          <h3>{step.title}</h3>
+          <p>{step.text}</p>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

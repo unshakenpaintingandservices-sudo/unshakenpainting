@@ -1,0 +1,62 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Owner from '../components/Owner.astro';
+import Expectations from '../components/Expectations.astro';
+import { business, locationLabel } from '../data/business';
+---
+
+<Layout
+  title={`Meet Grant Dorney | ${business.shortName}`}
+  description={`Meet Grant Dorney, owner of ${business.name} in ${locationLabel}. Personally involved from estimate to final walkthrough.`}
+>
+  <section class="page-heading about-heading">
+    <div class="container">
+      <p class="eyebrow">About Unshaken</p>
+      <h1>
+        A local painter.
+        <br /> <em>A personal way of working.</em>
+      </h1>
+    </div>
+  </section>
+  <Owner />
+  <section class="section story-section">
+    <div class="container story-grid">
+      <article id="grant-story" aria-labelledby="grant-story-heading">
+        <p class="eyebrow">Grant’s story</p>
+        <h2 id="grant-story-heading">In his own words.</h2>
+        {business.ownerStory.map((paragraph) => (
+          <p>{paragraph}</p>
+        ))}
+        <p class="story-signature">
+          <strong>
+            {business.owner}, {business.ownerTitle}
+          </strong>
+          <br />
+          {business.shortName}
+          <br />
+          <a href={business.phone.href}>{business.phone.signatureDisplay}</a>
+        </p>
+      </article>
+      <article aria-labelledby="name-story-heading">
+        <p class="eyebrow">The name Unshaken</p>
+        <h2 id="name-story-heading">Why Unshaken.</h2>
+        {business.nameStory.map((paragraph) => (
+          <p>{paragraph}</p>
+        ))}
+      </article>
+    </div>
+  </section>
+  <Expectations />
+</Layout>
+
+<style>
+  .story-grid .story-signature {
+    margin-top: 24px;
+    color: var(--color-navy);
+  }
+
+  .story-signature a {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+</style>

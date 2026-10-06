@@ -1,0 +1,196 @@
+---
+const live =
+  import.meta.env.PUBLIC_INQUIRY_MODE === 'live' &&
+  import.meta.env.PUBLIC_SITE_LAUNCH_READY === 'true';
+---
+
+<div class="inquiry-panel">
+  <p class="eyebrow">Request an estimate</p>
+  <h2>Tell me about the project.</h2>
+  <p class="form-intro">
+    A few details are enough to start. Only the contact information for your
+    preferred reply method is required.
+  </p>
+  {!live && (
+    <div class="preview-notice">
+      <strong>Local preview — delivery is turned off.</strong>
+      <p>
+        You can check this form, but nothing will be sent to Grant. Your details
+        and photos stay in this page until you leave or clear them.
+      </p>
+    </div>
+  )}
+  <form
+    id="inquiry-form"
+    method="post"
+    action="/contact/"
+    aria-label="Estimate request"
+    aria-describedby="required-help"
+  >
+    <p id="required-help" class="field-help">
+      Fields marked “required” help Grant understand your request.
+    </p>
+    <div
+      id="form-errors"
+      class="form-message error-summary"
+      role="alert"
+      tabindex="-1"
+      hidden
+    >
+      <h3>Please check these details.</h3>
+      <ul></ul>
+    </div>
+    <div class="form-grid">
+      <div class="form-field full-field">
+        <label for="name">
+          Name <span>(required)</span>
+        </label>
+        <input
+          id="name"
+          name="name"
+          autocomplete="name"
+          required
+          maxlength="100"
+          aria-describedby="name-error"
+        />
+        <p class="field-error" id="name-error" hidden></p>
+      </div>
+      <div class="form-field full-field">
+        <label for="preferredContact">
+          Preferred contact method <span>(required)</span>
+        </label>
+        <select
+          id="preferredContact"
+          name="preferredContact"
+          required
+          aria-describedby="preferredContact-error"
+        >
+          <option value="email">Email</option>
+          <option value="phone">Phone call</option>
+        </select>
+        <p class="field-error" id="preferredContact-error" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="email">
+          Email <span id="email-requirement">(required for email replies)</span>
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          autocomplete="email"
+          maxlength="254"
+          required
+          aria-describedby="email-error"
+        />
+        <p class="field-error" id="email-error" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="phone">
+          Phone <span id="phone-requirement">(optional)</span>
+        </label>
+        <input
+          type="tel"
+          id="phone"
+          name="phone"
+          autocomplete="tel"
+          maxlength="30"
+          aria-describedby="phone-error"
+        />
+        <p class="field-error" id="phone-error" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="city">
+          Project city <span>(required)</span>
+        </label>
+        <input
+          id="city"
+          name="city"
+          autocomplete="address-level2"
+          maxlength="100"
+          required
+          aria-describedby="city-error"
+        />
+        <p class="field-error" id="city-error" hidden></p>
+      </div>
+      <div class="form-field">
+        <label for="projectType">
+          Project type <span>(required)</span>
+        </label>
+        <select
+          id="projectType"
+          name="projectType"
+          required
+          aria-describedby="projectType-error"
+        >
+          <option value="">Choose a type</option>
+          <option value="residential">Residential</option>
+          <option value="commercial">Commercial</option>
+          <option value="not-sure">Not sure yet</option>
+        </select>
+        <p class="field-error" id="projectType-error" hidden></p>
+      </div>
+      <div class="form-field full-field">
+        <label for="description">
+          Short project description <span>(required)</span>
+        </label>
+        <p id="description-help" class="field-help">
+          Tell Grant what you’d like painted and anything useful to know about
+          the project.
+        </p>
+        <textarea
+          id="description"
+          name="description"
+          rows="5"
+          required
+          maxlength="3000"
+          aria-describedby="description-help description-error"
+        ></textarea>
+        <p class="field-error" id="description-error" hidden></p>
+      </div>
+      <div class="form-field full-field">
+        <label for="photos">
+          Project photos <span>(optional)</span>
+        </label>
+        <p class="field-help" id="photos-help">
+          Up to 5 JPG, PNG, or WebP photos. 8 MB each, 20 MB total. Photos
+          aren’t needed to start a conversation.
+        </p>
+        <input
+          id="photos"
+          name="photos"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          multiple
+          aria-describedby="photos-help photos-error"
+        />
+        <p id="selected-photos" class="field-help" aria-live="polite"></p>
+        <p class="field-error" id="photos-error" hidden></p>
+      </div>
+    </div>
+    <div
+      id="form-result"
+      class="form-message"
+      role="status"
+      tabindex="-1"
+      hidden
+    ></div>
+    <div class="form-actions">
+      <button class="button" type="submit" id="submit-inquiry" disabled>
+        {live ? 'Request an Estimate' : 'Check request · local preview'}
+      </button>
+      <button class="clear-button" type="reset">
+        Clear form
+      </button>
+    </div>
+    <noscript>
+      <p class="preview-notice">
+        This form needs JavaScript to check your details safely. Please call
+        Grant using the number on this page.
+      </p>
+    </noscript>
+  </form>
+</div>
+<script>
+  import '../scripts/contact';
+</script>

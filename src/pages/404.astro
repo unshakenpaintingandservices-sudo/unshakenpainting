@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { business } from '../data/business';
+---
+
+<Layout
+  title={`Page not found | ${business.shortName}`}
+  description="This page could not be found. Return home or get in touch with Grant."
+>
+  <section class="section not-found-section">
+    <div class="container not-found">
+      <p class="eyebrow">Page not found</p>
+      <h1>
+        Let’s get you
+        <br />
+        back on track.
+      </h1>
+      <p>The page you’re looking for isn’t here.</p>
+      <a class="button" href="/">
+        Back to home
+      </a>
+      <a class="text-link" href="/contact/">
+        Contact Grant
+      </a>
+    </div>
+  </section>
+</Layout>

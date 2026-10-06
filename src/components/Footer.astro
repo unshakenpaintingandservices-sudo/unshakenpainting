@@ -1,0 +1,55 @@
+---
+import { business, locationLabel, navigation } from '../data/business';
+import Icon from './Icon.astro';
+---
+
+<footer class="site-footer">
+  <div class="container footer-reflection">
+    <span class="foundation-line" aria-hidden="true"></span>
+    <p>“A kingdom which cannot be shaken”</p>
+    <span class="verse-reference">Hebrews 12:28</span>
+  </div>
+  <div class="container footer-main">
+    <div class="footer-brand">
+      <a href="/" class="footer-name">
+        Unshaken<span>Painting and Services</span>
+      </a>
+      <p>{locationLabel}</p>
+    </div>
+    <nav aria-label="Footer navigation">
+      {navigation.map((item) => (
+        <a href={item.href}>{item.label}</a>
+      ))}
+    </nav>
+    <div class="footer-contact">
+      <span class="eyebrow">Talk with Grant</span>
+      <a href={business.phone.href}>{business.phone.display}</a>
+      {business.email && (
+        <a href={`mailto:${business.email}`}>{business.email}</a>
+      )}
+      {business.warranty?.approved &&
+        (business.warranty.detailsUrl ? (
+          <a class="warranty-link" href={business.warranty.detailsUrl}>
+            {business.warranty.title} — View warranty details
+          </a>
+        ) : (
+          <p>{business.warranty.title}</p>
+        ))}
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>
+      © {new Date().getFullYear()} {business.name}
+    </p>
+  </div>
+</footer>
+<div class="mobile-contact">
+  <a href={business.phone.href}>
+    <Icon name="phone" />
+    Call Grant
+  </a>
+  <a href="/contact/">
+    Request an Estimate
+    <Icon />
+  </a>
+</div>

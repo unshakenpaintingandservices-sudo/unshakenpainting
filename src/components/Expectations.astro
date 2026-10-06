@@ -1,0 +1,23 @@
+---
+import { getPublicExpectations } from '../data/services';
+const values = getPublicExpectations();
+---
+
+<section class="section expectations">
+  <div class="container">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">A straightforward approach</p>
+        <h2>What you can expect.</h2>
+      </div>
+    </div>
+    <div class="values-grid">
+      {values.map((value) => (
+        <article>
+          <h3>{value.title}</h3>
+          <p>{value.text}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

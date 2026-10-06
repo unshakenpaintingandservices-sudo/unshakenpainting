@@ -1,0 +1,55 @@
+---
+import Layout from '../layouts/Layout.astro';
+import InquiryForm from '../components/InquiryForm.astro';
+import Icon from '../components/Icon.astro';
+import Mark from '../components/Mark.astro';
+import { business, locationLabel } from '../data/business';
+---
+
+<Layout
+  title={`Contact Grant & Request an Estimate | ${business.shortName}`}
+  description={`Call Grant Dorney at ${business.phone.display} to discuss painting in ${locationLabel} and surrounding communities, or start an estimate request.`}
+>
+  <section class="page-heading contact-heading">
+    <div class="container">
+      <Mark />
+      <p class="eyebrow">Contact Grant</p>
+      <h1>How may I serve you?</h1>
+      <p>Call Grant or share a little about your project below.</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container contact-layout">
+      <div class="contact-sidebar">
+        <h2>Call Grant.</h2>
+        <a class="contact-number" href={business.phone.href}>
+          <Icon name="phone" />
+          {business.phone.display}
+        </a>
+        <p>
+          If you reach voicemail, leave your name and a little about your
+          project.
+        </p>
+      </div>
+      <InquiryForm />
+      <aside class="contact-context">
+        <div class="contact-area">
+          <Icon name="location" />
+          <div>
+            <h3>{locationLabel}</h3>
+            <p>
+              Generally within about{' '}
+              {business.serviceArea.approximateRadiusMiles} miles of{' '}
+              {business.homeBase.city}. Share your city and Grant can discuss
+              whether the project is a fit.
+            </p>
+          </div>
+        </div>
+        {business.email && (
+          <a href={`mailto:${business.email}`}>{business.email}</a>
+        )}
+        {business.hours && <p>{business.hours}</p>}
+      </aside>
+    </div>
+  </section>
+</Layout>

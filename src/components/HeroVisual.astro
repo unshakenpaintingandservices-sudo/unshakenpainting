@@ -1,0 +1,23 @@
+---
+import { Image } from 'astro:assets';
+import { publishedProjects, projectCover } from '../data/projects';
+import PhotoPlaceholder from './PhotoPlaceholder.astro';
+const heroPhoto = publishedProjects.map(projectCover).find(Boolean);
+---
+
+{heroPhoto ? (
+  <figure class="hero-photo">
+    <Image
+      src={heroPhoto.image}
+      alt={heroPhoto.alt}
+      width={1200}
+      widths={[480, 720, 1000, 1200]}
+      sizes="(max-width: 640px) 100vw, 48vw"
+      format="webp"
+      loading="eager"
+      fetchpriority="high"
+    />
+  </figure>
+) : (
+  <PhotoPlaceholder />
+)}

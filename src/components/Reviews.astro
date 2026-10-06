@@ -1,0 +1,43 @@
+---
+import { publishedReviews } from '../data/reviews';
+import { safeReviewName } from '../data/review-policy';
+---
+
+<section class="section review-section">
+  <div class="container review-layout">
+    <div>
+      <p class="eyebrow">Customer words</p>
+      <h2>
+        From the people
+        <br />
+        behind the projects.
+      </h2>
+    </div>
+    <div>
+      {publishedReviews.length ? (
+        publishedReviews.slice(0, 3).map((review) => (
+          <figure class="review">
+            <blockquote>{review.reviewText}</blockquote>
+            <figcaption>
+              {safeReviewName(review)}
+              <span>{review.projectType}</span>
+              {review.sourceUrl.startsWith('https://') && (
+                <a href={review.sourceUrl} rel="noopener noreferrer">
+                  Read on {review.source}
+                </a>
+              )}
+            </figcaption>
+          </figure>
+        ))
+      ) : (
+        <div class="review-pending">
+          <p class="eyebrow">Reviews pending approval</p>
+          <p>
+            Customer feedback will appear here once the review and permission to
+            share it have been confirmed.
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</section>

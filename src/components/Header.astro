@@ -1,0 +1,53 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { business, navigation } from '../data/business';
+const path = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <Logo />
+    <nav class="desktop-nav" aria-label="Main navigation">
+      {navigation.map((item) => (
+        <a
+          href={item.href}
+          aria-current={path === item.href ? 'page' : undefined}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+    <div class="header-contact">
+      <a
+        class="header-phone"
+        href={business.phone.href}
+        aria-label={`Call Grant at ${business.phone.display}`}
+      >
+        <Icon name="phone" />
+        <span>{business.phone.display}</span>
+      </a>
+      <a class="button button-small header-estimate" href="/contact/">
+        Request an Estimate
+      </a>
+    </div>
+    <details class="mobile-menu">
+      <summary>
+        Menu<span aria-hidden="true">☰</span>
+      </summary>
+      <nav aria-label="Mobile navigation">
+        {navigation.map((item) => (
+          <a
+            href={item.href}
+            aria-current={path === item.href ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))}
+        <a class="button" href="/contact/">
+          Request an Estimate
+        </a>
+      </nav>
+    </details>
+  </div>
+</header>

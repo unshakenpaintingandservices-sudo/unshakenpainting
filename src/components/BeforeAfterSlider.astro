@@ -1,0 +1,326 @@
+---
+import { Image } from 'astro:assets';
+import type { ProjectComparison } from '../data/projects';
+
+interface Props {
+  comparison: ProjectComparison;
+  id: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+}
+
+const {
+  comparison,
+  id,
+  sizes = '(max-width: 640px) 90vw, (min-width: 1440px) 1050px, 74vw',
+  loading = 'lazy',
+} = Astro.props;
+const instructionsId = `${id}-instructions`;
+---
+
+<figure
+  class="before-after"
+  data-before-after
+  style={{
+    '--comparison-ratio': comparison.aspectRatio ?? '4 / 3',
+    '--comparison-before-position':
+      comparison.beforeObjectPosition ?? '50% 50%',
+    '--comparison-after-position': comparison.afterObjectPosition ?? '50% 50%',
+    '--comparison-after-scale': comparison.afterScale ?? 1,
+    '--comparison-after-offset-x': comparison.afterOffsetX ?? '0%',
+  }}
+>
+  <div class="comparison-stage">
+    <Image
+      class="comparison-image comparison-after"
+      src={comparison.after.image}
+      alt={comparison.after.alt}
+      width={1400}
+      widths={[400, 700, 1000, 1400]}
+      sizes={sizes}
+      format="webp"
+      quality={85}
+      loading={loading}
+      decoding="async"
+    />
+    <Image
+      class="comparison-image comparison-before"
+      src={comparison.before.image}
+      alt={comparison.before.alt}
+      width={1400}
+      widths={[400, 700, 1000, 1400]}
+      sizes={sizes}
+      format="webp"
+      quality={85}
+      loading={loading}
+      decoding="async"
+    />
+    <span class="comparison-label comparison-label-before">Before</span>
+    <span class="comparison-label comparison-label-after">After</span>
+    <span class="comparison-divider" aria-hidden="true">
+      <span class="comparison-handle">
+        <svg viewBox="0 0 24 18" width="24" height="18" fill="none">
+          <path
+            d="m8 4-5 5 5 5m8-10 5 5-5 5"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
+        </svg>
+      </span>
+    </span>
+    <input
+      class="comparison-range"
+      id={`${id}-range`}
+      type="range"
+      min="0"
+      max="100"
+      step="1"
+      value="50"
+      aria-label={`Compare before and after: ${comparison.title}`}
+      aria-describedby={instructionsId}
+      aria-valuetext="50% before, 50% after"
+      hidden
+    />
+  </div>
+  <figcaption class="comparison-caption">
+    <span class="comparison-caption-title">{comparison.title}</span>
+    <span class="comparison-instructions" id={instructionsId}>
+      Before on the left. After on the right.
+    </span>
+    {comparison.note && <span class="comparison-note">{comparison.note}</span>}
+  </figcaption>
+</figure>
+
+<script>
+  function initializeComparisons() {
+    document
+      .querySelectorAll<HTMLElement>('[data-before-after]')
+      .forEach((figure) => {
+        if (figure.classList.contains('is-ready')) return;
+        const range =
+          figure.querySelector<HTMLInputElement>('.comparison-range');
+        const instructions = figure.querySelector<HTMLElement>(
+          '.comparison-instructions',
+        );
+        if (!range || !instructions) return;
+
+        const update = () => {
+          const position = Number(range.value);
+          figure.style.setProperty('--position', `${position}%`);
+          range.setAttribute(
+            'aria-valuetext',
+            `${position}% before, ${100 - position}% after`,
+          );
+        };
+
+        range.addEventListener('input', update);
+        update();
+        range.hidden = false;
+        figure.classList.add('is-ready');
+        instructions.textContent = 'Drag or use arrow keys to compare.';
+      });
+  }
+
+  initializeComparisons();
+  document.addEventListener('astro:page-load', initializeComparisons);
+</script>
+
+<style>
+  .before-after {
+    --position: 50%;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .comparison-stage {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    aspect-ratio: var(--comparison-ratio);
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--color-photo);
+  }
+
+  .comparison-stage .comparison-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+    object-fit: cover;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .comparison-before {
+    object-position: var(--comparison-before-position);
+    clip-path: inset(0 calc(100% - var(--position)) 0 0);
+  }
+
+  .comparison-after {
+    object-position: var(--comparison-after-position);
+    /* Fixed crop adjustment: slider movement changes only the before clip. */
+    transform: translateX(var(--comparison-after-offset-x))
+      scale(var(--comparison-after-scale));
+    transform-origin: center;
+  }
+
+  .comparison-label {
+    position: absolute;
+    z-index: 2;
+    top: clamp(12px, 2vw, 20px);
+    padding: 5px 11px;
+    border: 1px solid rgb(252 251 248 / 35%);
+    border-radius: var(--radius);
+    background: var(--color-navy);
+    color: var(--color-white);
+    font-size: 0.6875rem;
+    font-weight: 650;
+    line-height: 1.7;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .comparison-label-before {
+    left: clamp(12px, 2vw, 20px);
+  }
+
+  .comparison-label-after {
+    right: clamp(12px, 2vw, 20px);
+  }
+
+  .comparison-divider {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: var(--position);
+    width: 2px;
+    transform: translateX(-50%);
+    background: var(--color-white);
+    box-shadow: 0 0 0 1px rgb(23 50 77 / 35%);
+    pointer-events: none;
+  }
+
+  .comparison-handle {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    transform: translate(-50%, -50%);
+    border: 2px solid var(--color-white);
+    border-radius: 50%;
+    background: var(--color-navy);
+    color: var(--color-white);
+    box-shadow: 0 1px 4px rgb(23 50 77 / 30%);
+  }
+
+  .is-ready .comparison-handle {
+    display: grid;
+  }
+
+  .comparison-range {
+    /* Extend by one thumb width so its center travels across the full image. */
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: -22px;
+    width: calc(100% + 44px);
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    opacity: 0;
+    cursor: ew-resize;
+    touch-action: pan-y;
+  }
+
+  .comparison-range::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .comparison-range::-webkit-slider-thumb {
+    width: 44px;
+    height: 100%;
+    border: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+
+  .comparison-range::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .comparison-range::-moz-range-thumb {
+    width: 44px;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .comparison-stage:has(.comparison-range:focus-visible) {
+    outline: 3px solid var(--color-navy);
+    outline-offset: 4px;
+  }
+
+  .comparison-stage:has(.comparison-range:focus-visible) .comparison-handle {
+    outline: 3px solid var(--color-navy);
+    outline-offset: 3px;
+  }
+
+  .comparison-caption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 20px;
+    padding-top: 12px;
+    font-size: 0.75rem;
+    line-height: 1.6;
+  }
+
+  .comparison-caption-title {
+    color: var(--color-navy);
+    font-weight: 650;
+  }
+
+  .comparison-instructions {
+    color: var(--color-muted);
+  }
+
+  .comparison-note {
+    flex-basis: 100%;
+    color: var(--color-muted);
+  }
+
+  @media (forced-colors: active) {
+    .comparison-label,
+    .comparison-handle {
+      border-color: CanvasText;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .comparison-divider {
+      background: CanvasText;
+    }
+
+    .comparison-stage:has(.comparison-range:focus-visible),
+    .comparison-stage:has(.comparison-range:focus-visible) .comparison-handle {
+      outline-color: Highlight;
+    }
+  }
+</style>

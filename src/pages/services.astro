@@ -1,0 +1,63 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Mark from '../components/Mark.astro';
+import Icon from '../components/Icon.astro';
+import Process from '../components/Process.astro';
+import { services } from '../data/services';
+import { business, locationLabel } from '../data/business';
+---
+
+<Layout
+  title={`Painting Services in ${locationLabel} | ${business.shortName}`}
+  description={`Interior painting, residential repaints, commercial painting, and new construction spray-outs around ${locationLabel}. Talk with Grant about the scope.`}
+>
+  <section class="page-heading services-heading">
+    <div class="container">
+      <div class="services-index">
+        <p class="eyebrow">Painting services · {locationLabel}</p>
+        <Mark />
+      </div>
+      <h1>
+        A fresh coat starts
+        <br /> with a conversation.
+      </h1>
+      <p>
+        Homes, businesses, and new construction. Tell Grant what you’d like
+        painted, and work through the details together.
+      </p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container services-list">
+      {services.map((service) => (
+        <article id={service.id} class="service-detail">
+          <span class="item-number">{service.number}</span>
+          <div>
+            <h2>{service.title}</h2>
+            <p>{service.description}</p>
+          </div>
+          <ul>
+            {service.examples.map((example) => (
+              <li>{example}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+      <aside class="scope-note">
+        <h3>A note on preparation and ceiling work</h3>
+        <p>
+          Some projects involve ceiling texture, mud, or limited drywall-related
+          work. Grant can discuss what he can handle or coordinate as part of a
+          painting project. Unshaken is a painting company; the scope of any
+          drywall work needs a conversation first.
+        </p>
+      </aside>
+    </div>
+  </section>
+  <Process />
+  <div class="container page-next">
+    <a class="text-link" href="/contact/">
+      Talk with Grant about your project <Icon />
+    </a>
+  </div>
+</Layout>

@@ -1,0 +1,27 @@
+---
+import { business, locationLabel } from '../data/business';
+import Icon from './Icon.astro';
+---
+
+<section class="section area-section">
+  <div class="container area-layout">
+    <div class="area-mark">
+      <Icon name="location" />
+      <span>{locationLabel}</span>
+    </div>
+    <div>
+      <p class="eyebrow">Close to home</p>
+      <h2>{business.homeBase.city}, and the communities around it.</h2>
+      <p>{business.serviceArea.description}</p>
+      <p>
+        Projects are generally within about{' '}
+        {business.serviceArea.approximateRadiusMiles} miles of{' '}
+        {business.homeBase.city}. Share your project’s location with Grant to
+        see whether it’s a fit.
+      </p>
+      {business.serviceArea.cities.length > 0 && (
+        <p>{business.serviceArea.cities.join(' · ')}</p>
+      )}
+    </div>
+  </div>
+</section>

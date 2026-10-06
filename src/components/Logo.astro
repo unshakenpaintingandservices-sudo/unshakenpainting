@@ -1,0 +1,11 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/brand/unshaken-logo.png';
+import { business } from '../data/business';
+---
+
+<a class="brand" href="/" aria-label={`${business.name} — home`}>
+  <span class="logo-window">
+    <Image src={logo} width={306} height={204} alt="" loading="eager" />
+  </span>
+</a>
