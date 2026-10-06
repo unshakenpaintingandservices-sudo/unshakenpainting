@@ -11,7 +11,7 @@ const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
   </p>
   {!live && (
     <div class="preview-notice">
-      <strong>Local preview — delivery is turned off.</strong>
+      <strong>Preview mode — requests are not sent.</strong>
       <p>
         You can check this form, but nothing will be sent to Grant. Your details
         and photos stay in this page until you leave or clear them.
@@ -190,7 +190,7 @@ const live = import.meta.env.PUBLIC_INQUIRY_MODE === 'live';
     ></div>
     <div class="form-actions">
       <button class="button" type="submit" id="submit-inquiry" disabled>
-        {live ? 'Request an Estimate' : 'Check request · local preview'}
+        {live ? 'Send estimate request' : 'Check request · preview'}
       </button>
       <button class="clear-button" type="reset">
         Clear form

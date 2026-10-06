@@ -137,8 +137,8 @@ if (form) {
       accepted = outcome.status === 'accepted';
       result.textContent =
         outcome.status === 'preview'
-          ? 'Your request passes the form checks. This is a local preview: no request or photos were sent to Grant, and nothing was saved. You can keep editing or clear the form.'
-          : 'Your request was accepted for email delivery to Grant. Thank you for telling Grant about your project.';
+          ? 'Your request passes the form checks. This is preview mode: no request or photos were sent to Grant, and nothing was saved. You can keep editing or clear the form.'
+          : 'Your request was submitted successfully.';
       result.classList.remove('is-error');
     } catch (error) {
       result.setAttribute('role', 'alert');

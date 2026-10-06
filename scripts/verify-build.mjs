@@ -293,6 +293,56 @@ for (const file of pages) {
   if (file === 'contact/index.html') {
     assert.match(html, /action="\/api\/contact\/"/);
     assert.match(html, /name="website"/);
+    const submit = [
+      ...html.matchAll(/(<button\b[^>]*>)(.*?)<\/button>/gs),
+    ].find((match) => attribute(match[1], 'id') === 'submit-inquiry');
+    assert.equal(
+      submit?.[2].trim(),
+      launch ? 'Send estimate request' : 'Check request · preview',
+      'Submit wording must match the compiled inquiry mode',
+    );
+    const previewHeading = 'Preview mode — requests are not sent.';
+    assert.equal(html.includes(previewHeading), !launch);
+    assert.doesNotMatch(html, /Local preview — delivery is turned off/);
+    for (const [id, type, autocomplete] of [
+      ['name', 'text', 'name'],
+      ['email', 'email', 'email'],
+      ['phone', 'tel', 'tel'],
+    ]) {
+      const input = [...html.matchAll(/<input\b[^>]*>/g)].find(
+        (match) => attribute(match[0], 'id') === id,
+      )?.[0];
+      assert.ok(input, `Missing contact field: ${id}`);
+      assert.equal(attribute(input, 'type') ?? 'text', type);
+      assert.equal(attribute(input, 'autocomplete'), autocomplete);
+      assert.match(html, new RegExp(`<label\\b[^>]* for="${id}"`));
+    }
+    const contactScripts = await Promise.all(
+      [...html.matchAll(/(<script\b[^>]*>)(.*?)<\/script>/gs)]
+        .filter((match) => attribute(match[1], 'type') === 'module')
+        .map(async (match) => {
+          const src = attribute(match[1], 'src');
+          return src ? readFile(path.join(root, src), 'utf8') : match[2];
+        }),
+    );
+    const contactCode = contactScripts.join('\n');
+    assert.ok(
+      contactCode.includes(
+        launch ? 'Sending your request…' : 'Checking your request…',
+      ),
+      'Pending feedback must match the compiled inquiry mode',
+    );
+    assert.ok(contactCode.includes('Your request was submitted successfully.'));
+    assert.doesNotMatch(
+      contactCode,
+      /This is a local preview|accepted for email delivery to Grant/,
+    );
+    if (!launch)
+      assert.ok(
+        contactCode.includes(
+          'This is preview mode: no request or photos were sent to Grant',
+        ),
+      );
     if (launch)
       assert.doesNotMatch(
         html,
@@ -485,7 +535,7 @@ console.log(
       checkedComparisons,
       clientJavaScriptBytes: bytes,
       checks:
-        'metadata, local assets, responsive images, comparison pairs, accessible controls, links, anchor targets, schema, indexing mode, legacy redirects, claims, credential patterns',
+        'metadata, local assets, responsive images, comparison pairs, accessible controls, contact wording and mode, mobile input semantics, links, anchor targets, schema, indexing mode, legacy redirects, claims, credential patterns',
     },
     null,
     2,
